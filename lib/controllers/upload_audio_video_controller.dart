@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,21 +19,14 @@ class UploadAudioVideoController extends GetxController {
   RxBool uploading = false.obs;
   RxDouble progress = 0.0.obs;
 
+  var selectedAudio = ''.obs;
   final RxBool tabStatus = true.obs;
 
   final RxList<String> recommendedSounds = <String>[].obs;
+  var deviceSongs = <SongModel>[].obs;
+
   var isFetchingDeviceAudio = false.obs;
   var deviceAudioFiles = <File>[].obs;
-
-  void toggleTabs(){
-    tabStatus.value = !tabStatus.value;
-    if(tabStatus.value==true){
-      fetchRecommendedSounds();
-    }
-    else{
-      querySongsWithPermission();
-    }
-  }
 
   @override
   void onInit() {
@@ -42,102 +34,70 @@ class UploadAudioVideoController extends GetxController {
     fetchRecommendedSounds();
   }
 
+  ///***************** Method to tab toggle ***************///
+                                //
+  void toggleTabs() {
+    tabStatus.value = !tabStatus.value;
+    if (tabStatus.value == true) {
+      fetchRecommendedSounds();
+    } else {
+      querySongsWithPermission();
+    }
+  }
 
-
-  //***************** Method to fetch recommended sounds from Firebase Storage***************//
+  ///******** Method to fetch recommended sounds from Firebase Storage*******///
+                                      //
   Future<void> fetchRecommendedSounds() async {
     try {
-      ListResult result = await FirebaseStorage.instance.ref('audios').listAll();
+      ListResult result =
+          await FirebaseStorage.instance.ref('audios').listAll();
       recommendedSounds.value = result.items.map((item) => item.name).toList();
-      print("sayem recommended sounds");
-      print(recommendedSounds.toString());
+      debugPrint("sayem recommended sounds");
+      debugPrint(recommendedSounds.toString());
     } catch (e) {
       recommendedSounds.value = [];
-      print("Error fetching recommended sounds: $e");
+      debugPrint("Error fetching recommended sounds: $e");
     }
   }
-  //************** Method to query songs on the device with permission handling **************//
-  Future<List<SongModel>> querySongsWithPermission() async {
-    // Request permission to access audio files
-    if (await Permission.storage.request().isGranted) {
-      // Permission granted, query the songs
-      return OnAudioQuery().querySongs(
-        sortType: SongSortType.DISPLAY_NAME,
-        orderType: OrderType.ASC_OR_SMALLER,
-        uriType: UriType.EXTERNAL,
-        ignoreCase: true,
-      );
+
+  ///***** Method to query songs on the device with permission handling *****///
+                                      //
+  Future<void> querySongsWithPermission() async {
+    final PermissionStatus permissionStatus = await Permission.storage.status;
+
+    // Check if permission is already granted or request it
+    if (permissionStatus.isGranted ||
+        await Permission.storage.request().isGranted) {
+      try {
+        // Query songs if permission is granted
+        final songs = await OnAudioQuery().querySongs(
+          sortType: SongSortType.DISPLAY_NAME,
+          orderType: OrderType.ASC_OR_SMALLER,
+          uriType: UriType.EXTERNAL,
+          ignoreCase: true,
+        );
+        deviceSongs.value = songs;
+      } catch (e) {
+        // Handle query failure (optional)
+        Get.snackbar('Error', 'Failed to load songs: $e');
+        deviceSongs.value = [];
+      }
     } else {
       // Handle permission denied case
-      Get.snackbar('Permission Denied', 'Please allow storage access to load songs.');
-      return [];
+      Get.snackbar(
+          'Permission Denied', 'Storage access is required to load songs.',
+          snackPosition: SnackPosition.BOTTOM);
     }
   }
 
-  //***************** Method to scan the device for audio files***************//
+  // Handling song selection
+  void selectSong(String songName) {
+    songNameController.text = songName;
+    Get.back(); // Close the bottom sheet after selection
+  }
+
+  ///************ Code for Replacing Audio with FFmpeg: ************///
   //
-  Future<void> fetchAllDeviceAudio() async {
-    isFetchingDeviceAudio.value = true;
-    try {
-      // Request storage permission
-      var status = await Permission.storage.request();
-      if (status.isGranted) {
-        // Get root directory of external storage
-        Directory rootDir = await getExternalStorageDirectory() ?? Directory('/');
-        // Recursively scan for audio files
-        List<File> audioFiles = await _getAudioFilesFromDir(rootDir);
-        deviceAudioFiles.value = audioFiles;
-        print("sayem device sounds");
-        print(deviceAudioFiles.toString());
-      }
-    } catch (e) {
-      // Handle errors
-      print("Error fetching device audio: $e");
-    } finally {
-      isFetchingDeviceAudio.value = false;
-    }
-  }
-
-  // Helper method to scan directories recursively
-  Future<List<File>> _getAudioFilesFromDir(Directory dir) async {
-    List<File> audioFiles = [];
-    try {
-      var entities = dir.listSync(recursive: true);
-      for (var entity in entities) {
-        if (entity is File && (entity.path.endsWith('.mp3') || entity.path.endsWith('.wav'))) {
-          audioFiles.add(entity);
-        }
-      }
-    } catch (e) {
-      print("Error scanning directory: $e");
-    }
-    return audioFiles;
-  }
-
-
-
-  Future<void> pickDeviceAudio() async {
-    try {
-      print("Opening file picker...");
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
-        allowMultiple: false,
-      );
-      if (result != null && result.paths.isNotEmpty) {
-        String fileName = result.paths.first!.split('/').last;
-        songNameController.text = fileName;
-        Get.back(); // Close the bottom sheet after file selection
-      } else {
-        print("No file selected");
-      }
-    } catch (e) {
-      print("Error picking device audio files: $e");
-    }
-  }
-
-
-  ///Code for Replacing Audio with FFmpeg:
-
   Future<String?> replaceAudioInVideo(
       String videoPath, String audioPath) async {
     try {
@@ -173,34 +133,6 @@ class UploadAudioVideoController extends GetxController {
       quality: VideoQuality.MediumQuality,
     );
     return compressedVideo!.file;
-  }
-
-  Future<String> _uploadVideoToStorage(String id, String videoPath) async {
-    Reference ref = firebaseStorage.ref().child('videos').child(id);
-
-    UploadTask uploadTask = ref.putFile(await _compressVideo(videoPath));
-    // listen to the upload process
-    uploadTask.snapshotEvents.listen((event) {
-      double percentage = 100 * (event.bytesTransferred / event.totalBytes);
-      progress.value = percentage; // Update the progress
-    });
-
-    TaskSnapshot snap = await uploadTask;
-    String downloadUrl = await snap.ref.getDownloadURL();
-    return downloadUrl;
-  }
-
-  _getThumbnail(String videoPath) async {
-    final thumbnail = await VideoCompress.getFileThumbnail(videoPath);
-    return thumbnail;
-  }
-
-  Future<String> _uploadImageToStorage(String id, String videoPath) async {
-    Reference ref = firebaseStorage.ref().child('thumbnails').child(id);
-    UploadTask uploadTask = ref.putFile(await _getThumbnail(videoPath));
-    TaskSnapshot snap = await uploadTask;
-    String downloadUrl = await snap.ref.getDownloadURL();
-    return downloadUrl;
   }
 
   // upload video
@@ -248,5 +180,33 @@ class UploadAudioVideoController extends GetxController {
     } finally {
       uploading.value = false;
     }
+  }
+
+  Future<String> _uploadVideoToStorage(String id, String videoPath) async {
+    Reference ref = firebaseStorage.ref().child('videos').child(id);
+
+    UploadTask uploadTask = ref.putFile(await _compressVideo(videoPath));
+    // listen to the upload process
+    uploadTask.snapshotEvents.listen((event) {
+      double percentage = 100 * (event.bytesTransferred / event.totalBytes);
+      progress.value = percentage; // Update the progress
+    });
+
+    TaskSnapshot snap = await uploadTask;
+    String downloadUrl = await snap.ref.getDownloadURL();
+    return downloadUrl;
+  }
+
+  Future<String> _uploadImageToStorage(String id, String videoPath) async {
+    Reference ref = firebaseStorage.ref().child('thumbnails').child(id);
+    UploadTask uploadTask = ref.putFile(await _getThumbnail(videoPath));
+    TaskSnapshot snap = await uploadTask;
+    String downloadUrl = await snap.ref.getDownloadURL();
+    return downloadUrl;
+  }
+
+  _getThumbnail(String videoPath) async {
+    final thumbnail = await VideoCompress.getFileThumbnail(videoPath);
+    return thumbnail;
   }
 }
