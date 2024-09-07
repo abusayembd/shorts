@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shorts/controllers/upload_audio_video_controller.dart';
-
+import 'package:mini_music_visualizer/mini_music_visualizer.dart';
 import 'build_device_audio_list.dart';
 import 'build_recommended_sound_list.dart';
 

@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shorts/constants.dart';
@@ -12,6 +11,14 @@ import 'package:shorts/models/video.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../views/widgets/add_sound_bottom_sheet.dart';
+class Song {
+  final String name;
+  final String fullPath;
+
+  Song({required this.name, required this.fullPath});
+}
 
 class UploadAudioVideoController extends GetxController {
   final TextEditingController songNameController = TextEditingController();
@@ -22,20 +29,25 @@ class UploadAudioVideoController extends GetxController {
   var selectedAudio = ''.obs;
   final RxBool tabStatus = true.obs;
 
-  final RxList<String> recommendedSounds = <String>[].obs;
+  final RxList<Song> recommendedSounds = <Song>[].obs;
   var deviceSongs = <SongModel>[].obs;
 
-  var isFetchingDeviceAudio = false.obs;
-  var deviceAudioFiles = <File>[].obs;
+  final RxString currentlyPlayingAudio = ''.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    fetchRecommendedSounds();
+  final player = AudioPlayer();
+
+  ///******** Method for opening bottom sheet of audio selection  *********///
+  void selectAudioBottomSheet() async {
+    await fetchRecommendedSounds().then((value) {
+      Get.bottomSheet(
+        backgroundColor: Colors.black,
+        AddSoundBottomSheet(),
+      );
+    });
   }
 
   ///***************** Method to tab toggle ***************///
-                                //
+  //
   void toggleTabs() {
     tabStatus.value = !tabStatus.value;
     if (tabStatus.value == true) {
@@ -46,14 +58,22 @@ class UploadAudioVideoController extends GetxController {
   }
 
   ///******** Method to fetch recommended sounds from Firebase Storage*******///
-                                      //
+  //
   Future<void> fetchRecommendedSounds() async {
     try {
       ListResult result =
           await FirebaseStorage.instance.ref('audios').listAll();
-      recommendedSounds.value = result.items.map((item) => item.name).toList();
+      recommendedSounds.value = await Future.wait(result.items.map((audio) async {
+        return Song(name: audio.name, fullPath:  await audio.getDownloadURL());
+      }).toList());
       debugPrint("sayem recommended sounds");
       debugPrint(recommendedSounds.toString());
+      selectedAudio.value = recommendedSounds.first.name;
+      songNameController.text = recommendedSounds.first.name;
+      playAudio(
+          audioName: recommendedSounds.first.name,
+          audioPath: recommendedSounds.first.fullPath);
+      debugPrint("sayem ${selectedAudio.value}");
     } catch (e) {
       recommendedSounds.value = [];
       debugPrint("Error fetching recommended sounds: $e");
@@ -61,7 +81,7 @@ class UploadAudioVideoController extends GetxController {
   }
 
   ///***** Method to query songs on the device with permission handling *****///
-                                      //
+  //
   Future<void> querySongsWithPermission() async {
     final PermissionStatus permissionStatus = await Permission.storage.status;
 
@@ -90,10 +110,47 @@ class UploadAudioVideoController extends GetxController {
     }
   }
 
-  // Handling song selection
+  /// Handle song selection ///
   void selectSong(String songName) {
     songNameController.text = songName;
-    Get.back(); // Close the bottom sheet after selection
+    selectedAudio.value = songName;
+    playAudio(audioName: songName);
+    Get.back();
+  }
+
+  /// Play audio and update UI ///
+  void playAudio({required String audioName, audioPath}) {
+    print("Snigdho1");
+    print("Playing audio: $audioName");
+    print("Playing audio path: $audioPath");
+    print("Snigdho2");
+    if (currentlyPlayingAudio.value == audioName) {
+      stopAudio();
+    } else {
+      currentlyPlayingAudio.value = audioName;
+      setAudio(audioPath);
+      debugPrint("Playing audio: $audioName");
+      // Add logic for actual audio playing
+    }
+  }
+
+  void setAudio(String audioPath) async {
+    try {
+      await player
+          .setAudioSource(AudioSource.uri(Uri.parse(audioPath)))
+          .then((value) {
+        player.play();
+      });
+    } on PlayerException catch (e) {
+      debugPrint("Error loading audio source: $e");
+    }
+  }
+
+  /// Stop currently playing audio ///
+  void stopAudio() {
+    currentlyPlayingAudio.value = '';
+    player.stop();
+    debugPrint("Audio stopped");
   }
 
   ///************ Code for Replacing Audio with FFmpeg: ************///

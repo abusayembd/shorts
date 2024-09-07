@@ -6,8 +6,6 @@ import 'package:shorts/views/widgets/text_input_field.dart';
 import 'package:text_marquee/text_marquee.dart';
 import 'package:video_player/video_player.dart';
 
-import '../widgets/add_sound_bottom_sheet.dart';
-
 class ConfirmScreen extends StatefulWidget {
   final File videoFile;
   final String videoPath;
@@ -46,33 +44,33 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
     controller.dispose();
   }
 
-  void _selectAudio() async {
-    showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => AddSoundBottomSheet(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(
-                  height: 30,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(
+                height: 30,
+              ),
+              Container(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height * .75,
                 ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height / 1.5,
-                  child: VideoPlayer(controller),
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: controller.value.aspectRatio,
+                    child: VideoPlayer(controller),
+                  ),
                 ),
-                const SizedBox(
-                  height: 30,
-                ),
-                SingleChildScrollView(
+              ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height * 0.21,
+                child: SingleChildScrollView(
                   scrollDirection: Axis.vertical,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -81,7 +79,8 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 10),
                         width: MediaQuery.of(context).size.width - 20,
                         child: TextInputField(
-                          controller: uploadAudioVideoController.songNameController,
+                          controller:
+                              uploadAudioVideoController.songNameController,
                           labelText: 'Song Name',
                           icon: Icons.music_note,
                         ),
@@ -103,7 +102,8 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                         height: 10,
                       ),
                       ElevatedButton(
-                        onPressed: _selectAudio,
+                        onPressed: () =>
+                            uploadAudioVideoController.selectAudioBottomSheet(),
                         child: const TextMarquee(
                           spaceSize: 20,
                           'Add Sound',
@@ -131,9 +131,9 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                       )
                     ],
                   ),
-                )
-              ],
-            ),
+                ),
+              )
+            ],
           ),
           Obx(() {
             if (uploadAudioVideoController.uploading.value) {
