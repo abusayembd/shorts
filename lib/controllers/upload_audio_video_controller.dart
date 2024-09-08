@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,14 +13,10 @@ import 'package:shorts/models/video.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:video_player/video_player.dart';
 
 import '../views/widgets/add_sound_bottom_sheet.dart';
-class Song {
-  final String name;
-  final String fullPath;
 
-  Song({required this.name, required this.fullPath});
-}
 
 class UploadAudioVideoController extends GetxController {
   final TextEditingController songNameController = TextEditingController();
@@ -26,15 +24,56 @@ class UploadAudioVideoController extends GetxController {
   RxBool uploading = false.obs;
   RxDouble progress = 0.0.obs;
 
+  late VideoPlayerController videoController;
+  RxBool isVideoInitialized = false.obs;
+
   var selectedAudio = ''.obs;
   final RxBool tabStatus = true.obs;
 
-  final RxList<Song> recommendedSounds = <Song>[].obs;
+  final RxList<Map<String, String>> recommendedSounds = <Map<String, String>>[].obs;
   var deviceSongs = <SongModel>[].obs;
 
   final RxString currentlyPlayingAudio = ''.obs;
 
   final player = AudioPlayer();
+
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Ensure that the audio player is properly initialized
+    player.playerStateStream.listen((playerState) {
+      if (playerState.processingState == ProcessingState.completed) {
+        currentlyPlayingAudio.value = '';
+      }
+    });
+  }
+
+
+  void initializeVideo(File videoFile) {
+    videoController = VideoPlayerController.file(videoFile,videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true))
+      ..initialize().then((_) {
+
+        isVideoInitialized.value = true;
+        videoController.play();
+        videoController.setVolume(1);
+        videoController.setLooping(true);
+
+      });
+  }
+
+  void playVideo() {
+    if (!videoController.value.isPlaying) {
+      videoController.play();
+    }
+  }
+
+  void pauseVideo() {
+    if (videoController.value.isPlaying) {
+      videoController.pause();
+    }
+  }
+
 
   ///******** Method for opening bottom sheet of audio selection  *********///
   void selectAudioBottomSheet() async {
@@ -64,16 +103,16 @@ class UploadAudioVideoController extends GetxController {
       ListResult result =
           await FirebaseStorage.instance.ref('audios').listAll();
       recommendedSounds.value = await Future.wait(result.items.map((audio) async {
-        return Song(name: audio.name, fullPath:  await audio.getDownloadURL());
+        return {'name': audio.name, "fullPath":  await audio.getDownloadURL()};
       }).toList());
       debugPrint("sayem recommended sounds");
       debugPrint(recommendedSounds.toString());
-      selectedAudio.value = recommendedSounds.first.name;
-      songNameController.text = recommendedSounds.first.name;
+      selectedAudio.value = recommendedSounds.first['name']??'';
+      songNameController.text = recommendedSounds.first['name']??'';
       playAudio(
-          audioName: recommendedSounds.first.name,
-          audioPath: recommendedSounds.first.fullPath);
-      debugPrint("sayem ${selectedAudio.value}");
+          audioName: recommendedSounds.first['name']??'',
+          audioPath: recommendedSounds.first['fullPath']??'',
+      );
     } catch (e) {
       recommendedSounds.value = [];
       debugPrint("Error fetching recommended sounds: $e");
@@ -120,15 +159,14 @@ class UploadAudioVideoController extends GetxController {
 
   /// Play audio and update UI ///
   void playAudio({required String audioName, audioPath}) {
-    print("Snigdho1");
-    print("Playing audio: $audioName");
-    print("Playing audio path: $audioPath");
-    print("Snigdho2");
     if (currentlyPlayingAudio.value == audioName) {
       stopAudio();
     } else {
       currentlyPlayingAudio.value = audioName;
       setAudio(audioPath);
+      if (!videoController.value.isPlaying) {
+        videoController.play(); // Ensure the video keeps playing
+      }
       debugPrint("Playing audio: $audioName");
       // Add logic for actual audio playing
     }

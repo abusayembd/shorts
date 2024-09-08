@@ -6,46 +6,25 @@ import 'package:shorts/views/widgets/text_input_field.dart';
 import 'package:text_marquee/text_marquee.dart';
 import 'package:video_player/video_player.dart';
 
-class ConfirmScreen extends StatefulWidget {
+class ConfirmScreen extends StatelessWidget {
   final File videoFile;
   final String videoPath;
 
-  const ConfirmScreen({
+   ConfirmScreen({
     super.key,
     required this.videoFile,
     required this.videoPath,
   });
 
-  @override
-  State<ConfirmScreen> createState() => _ConfirmScreenState();
-}
-
-class _ConfirmScreenState extends State<ConfirmScreen> {
-  late VideoPlayerController controller;
-
   UploadAudioVideoController uploadAudioVideoController =
       Get.put(UploadAudioVideoController());
 
   @override
-  void initState() {
-    super.initState();
-    controller = VideoPlayerController.file(widget.videoFile)
-      ..initialize().then((_) {
-        setState(() {});
-        controller.play();
-        controller.setVolume(1);
-        controller.setLooping(true);
-      });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    controller.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Initialize the UploadAudioVideoController and video controller
+    final UploadAudioVideoController uploadAudioVideoController = Get.put(
+      UploadAudioVideoController(),
+    )..initializeVideo(videoFile);
     return Scaffold(
       body: Stack(
         children: [
@@ -56,17 +35,23 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
               const SizedBox(
                 height: 30,
               ),
-              Container(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height * .75,
-                ),
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: controller.value.aspectRatio,
-                    child: VideoPlayer(controller),
-                  ),
-                ),
-              ),
+              Obx(() => uploadAudioVideoController.isVideoInitialized.value
+                  ? Container(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height * .75,
+                      ),
+                      child: Center(
+                        child: AspectRatio(
+                          aspectRatio: uploadAudioVideoController
+                              .videoController.value.aspectRatio,
+                          child: VideoPlayer(
+                              uploadAudioVideoController.videoController),
+                        ),
+                      ),
+                    )
+                  : const Center(
+                      child: CircularProgressIndicator(),
+                    )),
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.21,
@@ -120,7 +105,7 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                         onPressed: () => uploadAudioVideoController.uploadVideo(
                             uploadAudioVideoController.songNameController.text,
                             uploadAudioVideoController.captionController.text,
-                            widget.videoPath),
+                            videoPath),
                         child: const Text(
                           'Share!',
                           style: TextStyle(
