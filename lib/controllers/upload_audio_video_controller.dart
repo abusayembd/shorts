@@ -160,9 +160,13 @@ class UploadAudioVideoController extends GetxController {
   /// Play audio and update UI ///
   void playAudio({required String audioName, audioPath}) {
     if (currentlyPlayingAudio.value == audioName) {
+      // If the currently selected audio is tapped again, stop and unselect it
       stopAudio();
+      currentlyPlayingAudio.value = ''; // Unselect the audio
+      selectedAudio.value = ''; // Unselect the audio in the UI
     } else {
       currentlyPlayingAudio.value = audioName;
+      selectedAudio.value = audioName; // Update selected audio in the UI
       setAudio(audioPath);
       if (!videoController.value.isPlaying) {
         videoController.play(); // Ensure the video keeps playing

@@ -34,14 +34,15 @@ Widget buildRecommendedSoundsList() {
               children: [
                 GestureDetector(
                   onTap: () async {
-                    debugPrint('Sound selected: ${sounds[index]}');
                     uploadAudioVideoController.songNameController.text =
-                        sounds[index]['name']??''; // update song name controller
+                        sounds[index]['name'] ??
+                            ''; // update song name controller
                     uploadAudioVideoController.selectedAudio.value =
                         sounds[index]['name'] ?? ''; // update selected audio
-                    debugPrint(
-                        'Selected Audio: ${uploadAudioVideoController.selectedAudio.value}');
-                     uploadAudioVideoController.playAudio(audioName:  sounds[index]['name'] ?? '', audioPath: sounds[index]['fullPath']??'');
+                    uploadAudioVideoController.playAudio(
+                        audioName: sounds[index]['name'] ?? '',
+                        audioPath:
+                            sounds[index]['fullPath'] ?? ''); // play audio
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width * 0.765,
@@ -72,7 +73,7 @@ Widget buildRecommendedSoundsList() {
                             Text(
                               sounds[index]['name']!.length > 34
                                   ? '${sounds[index]['name']?.substring(0, 34)}...' // Truncate to 35 characters and add ellipsis
-                                  : sounds[index]['name']??'',
+                                  : sounds[index]['name'] ?? '',
                               // Otherwise, show the full name
                               style: const TextStyle(
                                 color: Colors.white,
@@ -82,7 +83,7 @@ Widget buildRecommendedSoundsList() {
                             Text(
                               sounds[index]['name']!.length > 34
                                   ? '${sounds[index]['name']?.substring(0, 34)}...' // Truncate to 35 characters and add ellipsis
-                                  : sounds[index]['name']??'',
+                                  : sounds[index]['name'] ?? '',
                               // Otherwise, show the full name
                               style: const TextStyle(
                                 color: Colors.white,
