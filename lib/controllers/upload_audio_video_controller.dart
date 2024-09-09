@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -37,9 +37,11 @@ class UploadAudioVideoController extends GetxController {
 
   final player = AudioPlayer();
 
+  static const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+  final Random _rnd = Random();
+
   @override
   void dispose() {
-    // TODO: implement dispose
     videoController.dispose();
     player.dispose();
     super.dispose();
@@ -214,7 +216,7 @@ class UploadAudioVideoController extends GetxController {
       String videoPath, String audioPath) async {
     try {
       final directory = await getTemporaryDirectory();
-      String replacedSongOutputFilePath = '${directory.path}/output_video.mp4';
+      String replacedSongOutputFilePath = '${directory.path}/${getRandomString(15)}.mp4';
 
       // FFmpeg command to replace audio in the video
       String ffmpegCommand =
@@ -321,4 +323,7 @@ class UploadAudioVideoController extends GetxController {
     final thumbnail = await VideoCompress.getFileThumbnail(videoPath);
     return thumbnail;
   }
+
+  String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
+      length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
 }
