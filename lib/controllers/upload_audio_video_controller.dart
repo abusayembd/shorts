@@ -17,7 +17,6 @@ import 'package:video_player/video_player.dart';
 
 import '../views/widgets/add_sound_bottom_sheet.dart';
 
-
 class UploadAudioVideoController extends GetxController {
   final TextEditingController songNameController = TextEditingController();
   final TextEditingController captionController = TextEditingController();
@@ -30,13 +29,13 @@ class UploadAudioVideoController extends GetxController {
   var selectedAudio = ''.obs;
   final RxBool tabStatus = true.obs;
 
-  final RxList<Map<String, String>> recommendedSounds = <Map<String, String>>[].obs;
+  final RxList<Map<String, String>> recommendedSounds =
+      <Map<String, String>>[].obs;
   var deviceSongs = <SongModel>[].obs;
 
   final RxString currentlyPlayingAudio = ''.obs;
 
   final player = AudioPlayer();
-
 
   @override
   void onInit() {
@@ -49,16 +48,14 @@ class UploadAudioVideoController extends GetxController {
     });
   }
 
-
   void initializeVideo(File videoFile) {
-    videoController = VideoPlayerController.file(videoFile,videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true))
+    videoController = VideoPlayerController.file(videoFile,
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true))
       ..initialize().then((_) {
-
         isVideoInitialized.value = true;
         videoController.play();
         videoController.setVolume(1);
         videoController.setLooping(true);
-
       });
   }
 
@@ -73,7 +70,6 @@ class UploadAudioVideoController extends GetxController {
       videoController.pause();
     }
   }
-
 
   ///******** Method for opening bottom sheet of audio selection  *********///
   void selectAudioBottomSheet() async {
@@ -102,16 +98,17 @@ class UploadAudioVideoController extends GetxController {
     try {
       ListResult result =
           await FirebaseStorage.instance.ref('audios').listAll();
-      recommendedSounds.value = await Future.wait(result.items.map((audio) async {
-        return {'name': audio.name, "fullPath":  await audio.getDownloadURL()};
+      recommendedSounds.value =
+          await Future.wait(result.items.map((audio) async {
+        return {'name': audio.name, "fullPath": await audio.getDownloadURL()};
       }).toList());
       debugPrint("sayem recommended sounds");
       debugPrint(recommendedSounds.toString());
-      selectedAudio.value = recommendedSounds.first['name']??'';
-      songNameController.text = recommendedSounds.first['name']??'';
+      selectedAudio.value = recommendedSounds.first['name'] ?? '';
+      songNameController.text = recommendedSounds.first['name'] ?? '';
       playAudio(
-          audioName: recommendedSounds.first['name']??'',
-          audioPath: recommendedSounds.first['fullPath']??'',
+        audioName: recommendedSounds.first['name'] ?? '',
+        audioPath: recommendedSounds.first['fullPath'] ?? '',
       );
     } catch (e) {
       recommendedSounds.value = [];

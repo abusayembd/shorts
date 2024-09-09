@@ -10,14 +10,11 @@ class ConfirmScreen extends StatelessWidget {
   final File videoFile;
   final String videoPath;
 
-   ConfirmScreen({
+  ConfirmScreen({
     super.key,
     required this.videoFile,
     required this.videoPath,
   });
-
-  UploadAudioVideoController uploadAudioVideoController =
-      Get.put(UploadAudioVideoController());
 
   @override
   Widget build(BuildContext context) {
@@ -25,149 +22,164 @@ class ConfirmScreen extends StatelessWidget {
     final UploadAudioVideoController uploadAudioVideoController = Get.put(
       UploadAudioVideoController(),
     )..initializeVideo(videoFile);
-    return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(
-                height: 30,
-              ),
-              Obx(() => uploadAudioVideoController.isVideoInitialized.value
-                  ? Container(
-                      constraints: BoxConstraints(
-                        minHeight: MediaQuery.of(context).size.height * .75,
-                      ),
-                      child: Center(
-                        child: AspectRatio(
-                          aspectRatio: uploadAudioVideoController
-                              .videoController.value.aspectRatio,
-                          child: VideoPlayer(
-                              uploadAudioVideoController.videoController),
+    return  WillPopScope(
+      onWillPop: () async {
+        // When the user tries to go back, dispose of the controller
+        uploadAudioVideoController.stopAudio();
+        uploadAudioVideoController.pauseVideo();//package issue with video player
+        Get.delete<UploadAudioVideoController>();
+
+        // Return true to allow the page to be popped
+        return true;
+      },
+
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  height: 30,
+                ),
+                Obx(() => uploadAudioVideoController.isVideoInitialized.value
+                    ? Container(
+                        constraints: BoxConstraints(
+                          minHeight: MediaQuery.of(context).size.height * .75,
                         ),
-                      ),
-                    )
-                  : const Center(
-                      child: CircularProgressIndicator(),
-                    )),
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height * 0.21,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        width: MediaQuery.of(context).size.width - 20,
-                        child: TextInputField(
-                          controller:
-                              uploadAudioVideoController.songNameController,
-                          labelText: 'Song Name',
-                          icon: Icons.music_note,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        width: MediaQuery.of(context).size.width - 20,
-                        child: TextInputField(
-                          controller:
-                              uploadAudioVideoController.captionController,
-                          labelText: 'Caption',
-                          icon: Icons.closed_caption,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                        onPressed: () =>
-                            uploadAudioVideoController.selectAudioBottomSheet(),
-                        child: const TextMarquee(
-                          spaceSize: 20,
-                          'Add Sound',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                        onPressed: () => uploadAudioVideoController.uploadVideo(
-                            uploadAudioVideoController.songNameController.text,
-                            uploadAudioVideoController.captionController.text,
-                            videoPath),
-                        child: const Text(
-                          'Share!',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
+                        child: Center(
+                          child: AspectRatio(
+                            aspectRatio: uploadAudioVideoController
+                                .videoController.value.aspectRatio,
+                            child: VideoPlayer(
+                                uploadAudioVideoController.videoController),
                           ),
                         ),
                       )
-                    ],
-                  ),
-                ),
-              )
-            ],
-          ),
-          Obx(() {
-            if (uploadAudioVideoController.uploading.value) {
-              return AbsorbPointer(
-                absorbing: true,
-                child: Container(
-                  color: Colors.black.withOpacity(0.7),
-                  child: Center(
+                    : const Center(
+                        child: CircularProgressIndicator(),
+                      )),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height * 0.21,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        const CircularProgressIndicator(
-                          color: Colors.white,
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          "Please wait, your video is uploading",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          width: MediaQuery.of(context).size.width - 20,
+                          child: TextInputField(
+                            controller:
+                                uploadAudioVideoController.songNameController,
+                            labelText: 'Song Name',
+                            icon: Icons.music_note,
                           ),
                         ),
-                        LinearProgressIndicator(
-                          value:
-                              uploadAudioVideoController.progress.value / 100,
-                          backgroundColor: Colors.white,
-                          color: Colors.green,
-                          minHeight: 8,
+                        const SizedBox(
+                          height: 10,
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "${uploadAudioVideoController.progress.value.toStringAsFixed(0)}%",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          width: MediaQuery.of(context).size.width - 20,
+                          child: TextInputField(
+                            controller:
+                                uploadAudioVideoController.captionController,
+                            labelText: 'Caption',
+                            icon: Icons.closed_caption,
                           ),
                         ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                          onPressed: () => uploadAudioVideoController
+                              .selectAudioBottomSheet(),
+                          child: const TextMarquee(
+                            spaceSize: 20,
+                            'Add Sound',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                          onPressed: () =>
+                              uploadAudioVideoController.uploadVideo(
+                                  uploadAudioVideoController
+                                      .songNameController.text,
+                                  uploadAudioVideoController
+                                      .captionController.text,
+                                  videoPath),
+                          child: const Text(
+                            'Share!',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),
-                ),
-              );
-            } else {
-              return const SizedBox.shrink(); // Empty widget if not uploading
-            }
-          }),
-        ],
+                )
+              ],
+            ),
+            Obx(() {
+              if (uploadAudioVideoController.uploading.value) {
+                return AbsorbPointer(
+                  absorbing: true,
+                  child: Container(
+                    color: Colors.black.withOpacity(0.7),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            "Please wait, your video is uploading",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          LinearProgressIndicator(
+                            value:
+                                uploadAudioVideoController.progress.value / 100,
+                            backgroundColor: Colors.white,
+                            color: Colors.green,
+                            minHeight: 8,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            "${uploadAudioVideoController.progress.value.toStringAsFixed(0)}%",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                return const SizedBox.shrink(); // Empty widget if not uploading
+              }
+            }),
+          ],
+        ),
       ),
     );
   }
