@@ -22,17 +22,11 @@ class ConfirmScreen extends StatelessWidget {
     final UploadAudioVideoController uploadAudioVideoController = Get.put(
       UploadAudioVideoController(),
     )..initializeVideo(videoFile);
-    return  WillPopScope(
-      onWillPop: () async {
-        // When the user tries to go back, dispose of the controller
-        uploadAudioVideoController.stopAudio();
-        uploadAudioVideoController.pauseVideo();//package issue with video player
-        Get.delete<UploadAudioVideoController>();
-
-        // Return true to allow the page to be popped
-        return true;
+    return PopScope(
+      onPopInvoked: (value) async {
+        await Get.delete<UploadAudioVideoController>();
+        Get.back();
       },
-
       child: Scaffold(
         body: Stack(
           children: [

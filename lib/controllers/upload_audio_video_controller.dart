@@ -38,6 +38,22 @@ class UploadAudioVideoController extends GetxController {
   final player = AudioPlayer();
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    videoController.dispose();
+    player.dispose();
+    super.dispose();
+  }
+
+  @override
+  void onClose() {
+    videoController.dispose();
+    player.dispose();
+    super.onClose();
+  }
+
+
+  @override
   void onInit() {
     super.onInit();
     // Ensure that the audio player is properly initialized
