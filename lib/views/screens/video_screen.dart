@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shorts/constants.dart';
 import 'package:shorts/controllers/video_controller.dart';
@@ -5,6 +7,7 @@ import 'package:shorts/views/screens/comment_screen.dart';
 import 'package:shorts/views/widgets/circle_animation.dart';
 import 'package:get/get.dart';
 import 'package:shorts/views/widgets/video_player_iten.dart';
+import 'package:ticker_text/ticker_text.dart';
 
 class VideoScreen extends StatelessWidget {
   VideoScreen({super.key});
@@ -129,14 +132,29 @@ class VideoScreen extends StatelessWidget {
                                         size: 15,
                                         color: Colors.white,
                                       ),
-                                      Text(
-                                        data.songName,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
+                                      SizedBox(
+                                        height: Get.height * 0.03,
+                                        width: Get.width * 0.65,
+                                        child: TickerText(
+                                          scrollDirection: Axis.horizontal,
+                                          speed: 20,
+                                          startPauseDuration:
+                                              const Duration(milliseconds: 1000),
+                                          returnDuration: const Duration(
+                                              milliseconds: 800),
+                                          endPauseDuration:
+                                              const Duration(seconds: 4),
+                                          returnCurve: Curves.linear,
+                                          child: Text(
+                                            data.songName,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                      )
                                     ],
                                   )
                                 ],

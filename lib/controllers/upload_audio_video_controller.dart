@@ -26,7 +26,9 @@ class UploadAudioVideoController extends GetxController {
   late VideoPlayerController videoController;
   RxBool isVideoInitialized = false.obs;
 
-  var selectedAudio = ''.obs;
+  RxString selectedAudio = ''.obs;
+  RxString selectedAudioPath = ''.obs; // Store the audio path here
+  RxBool isOriginalSoundSelected = true.obs;
   final RxBool tabStatus = true.obs;
 
   final RxList<Map<String, String>> recommendedSounds =
@@ -37,7 +39,8 @@ class UploadAudioVideoController extends GetxController {
 
   final player = AudioPlayer();
 
-  static const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+  static const _chars =
+      'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
   final Random _rnd = Random();
 
   @override
@@ -53,7 +56,6 @@ class UploadAudioVideoController extends GetxController {
     player.dispose();
     super.onClose();
   }
-
 
   @override
   void onInit() {
@@ -216,11 +218,14 @@ class UploadAudioVideoController extends GetxController {
       String videoPath, String audioPath) async {
     try {
       final directory = await getTemporaryDirectory();
-      String replacedSongOutputFilePath = '${directory.path}/${getRandomString(15)}.mp4';
+      String replacedSongOutputFilePath =
+          '${directory.path}/${getRandomString(15)}.mp4';
 
       // FFmpeg command to replace audio in the video
-      String ffmpegCommand =
-          '-i $videoPath -i $audioPath -c:v copy -map 0:v:0 -map 1:a:0 -shortest $replacedSongOutputFilePath';
+
+      String ffmpegCommand = isOriginalSoundSelected.value
+          ? '-i $videoPath -i $audioPath -filter_complex "[0:a][1:a]amix=inputs=2:duration=shortest" -c:v copy -map 0:v:0 -map 0:a -map 1:a:0 -shortest $replacedSongOutputFilePath'
+          : '-i $videoPath -i $audioPath -c:v copy -map 0:v:0 -map 1:a:0 -shortest $replacedSongOutputFilePath';
 
       // Execute the FFmpeg command
       final session = await FFmpegKit.execute(ffmpegCommand);

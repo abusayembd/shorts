@@ -39,6 +39,7 @@ Widget buildRecommendedSoundsList() {
                             ''; // update song name controller
                     uploadAudioVideoController.selectedAudio.value =
                         sounds[index]['name'] ?? ''; // update selected audio
+                    uploadAudioVideoController.selectedAudioPath.value = sounds[index]['fullPath'] ?? ''; // Save the audio path
                     uploadAudioVideoController.playAudio(
                         audioName: sounds[index]['name'] ?? '',
                         audioPath:
