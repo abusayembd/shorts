@@ -344,8 +344,8 @@ class UploadAudioVideoController extends GetxController {
       context: context,
       backgroundColor: Colors.black,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(15),
+        borderRadius: BorderRadius.all(
+          Radius.circular(34),
         ),
         side: BorderSide(
           color: Colors.red,
@@ -366,23 +366,33 @@ class UploadAudioVideoController extends GetxController {
                     onPressed: () {
                       Navigator.of(context).pop(); // Close the bottom sheet
                     },
-                    child: const Text('Done'),
+                    child: const Text(
+                      'Done',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 24.0),
-                child: Text('Original Sound'),
+              Visibility(
+                visible: selectedAudio.value != '',
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 24.0),
+                  child: Text('Original Sound'),
+                ),
               ),
-              Obx(() => Slider(
-                    value: videoVolume.value,
-                    min: 0.0,
-                    max: 1.0,
-                    onChanged: (newValue) {
-                      videoVolume.value =  double.parse(newValue.toStringAsFixed(1));
-                      videoController.setVolume(videoVolume.value);
-                    },
-                  )),
+              Visibility(
+                visible: selectedAudio.value != '',
+                child: Obx(() => Slider(
+                      value: videoVolume.value,
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: (newValue) {
+                        videoVolume.value =
+                            double.parse(newValue.toStringAsFixed(1));
+                        videoController.setVolume(videoVolume.value);
+                      },
+                    )),
+              ),
               const Padding(
                 padding: EdgeInsets.only(
                   left: 24.0,
