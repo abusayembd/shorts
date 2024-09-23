@@ -373,44 +373,44 @@ class UploadAudioVideoController extends GetxController {
                   ),
                 ],
               ),
+              const Padding(
+                padding: EdgeInsets.only(left: 24.0),
+                child: Text('Original Sound'),
+              ),
+              Obx(() => Slider(
+                    value: videoVolume.value,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: (newValue) {
+                      videoVolume.value =
+                          double.parse(newValue.toStringAsFixed(1));
+                      videoController.setVolume(videoVolume.value);
+                    },
+                  )),
               Visibility(
                 visible: selectedAudio.value != '',
                 child: const Padding(
-                  padding: EdgeInsets.only(left: 24.0),
-                  child: Text('Original Sound'),
+                  padding: EdgeInsets.only(
+                    left: 24.0,
+                  ),
+                  child: Text('Added Sound'),
                 ),
               ),
               Visibility(
                 visible: selectedAudio.value != '',
-                child: Obx(() => Slider(
-                      value: videoVolume.value,
-                      min: 0.0,
-                      max: 1.0,
-                      onChanged: (newValue) {
-                        videoVolume.value =
-                            double.parse(newValue.toStringAsFixed(1));
-                        videoController.setVolume(videoVolume.value);
-                      },
-                    )),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(
-                  left: 24.0,
-                ),
-                child: Text('Added Sound'),
-              ),
-              Obx(
-                () => Slider(
-                  value: selectedAudioVolume.value,
-                  min: 0.0,
-                  max: 1.0,
-                  onChanged: (value) {
-                    selectedAudioVolume.value =
-                        double.parse(value.toStringAsFixed(1));
+                child: Obx(
+                  () => Slider(
+                    value: selectedAudioVolume.value,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: (value) {
+                      selectedAudioVolume.value =
+                          double.parse(value.toStringAsFixed(1));
 
-                    // Update the player volume in real-time
-                    player.setVolume(selectedAudioVolume.value);
-                  },
+                      // Update the player volume in real-time
+                      player.setVolume(selectedAudioVolume.value);
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
