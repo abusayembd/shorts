@@ -6,7 +6,7 @@ import 'package:shorts/constants.dart';
 import 'package:shorts/views/screens/confirm_screen.dart';
 
 class AddVideoScreen extends StatelessWidget {
-  const AddVideoScreen({Key? key}) : super(key: key);
+  const AddVideoScreen({super.key});
 
   pickVideo(ImageSource src, BuildContext context) async {
     final video = await ImagePicker().pickVideo(source: src);

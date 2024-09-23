@@ -90,8 +90,6 @@ class AuthController extends GetxController {
         'Error Creating Account',
         e.toString(),
       );
-      print("boo");
-      print(e);
     }
   }
 
@@ -108,7 +106,7 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       Get.snackbar(
-        'Error Loggin gin',
+        'Error Logging in',
         e.toString(),
       );
     }

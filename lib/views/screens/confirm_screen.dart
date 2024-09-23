@@ -147,7 +147,6 @@ class ConfirmScreen extends StatelessWidget {
                                 }
                               }
                             },
-
                             ///previously it was like this
                             // uploadAudioVideoController.uploadVideo(
                             //     uploadAudioVideoController

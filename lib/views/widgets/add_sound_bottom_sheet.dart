@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shorts/controllers/upload_audio_video_controller.dart';
-import 'package:mini_music_visualizer/mini_music_visualizer.dart';
+
+// import 'package:mini_music_visualizer/mini_music_visualizer.dart';
 import 'build_device_audio_list.dart';
 import 'build_recommended_sound_list.dart';
 
@@ -108,16 +109,19 @@ class AddSoundBottomSheet extends StatelessWidget {
             ),
           ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 10),
+            margin: const EdgeInsets.symmetric(
+              horizontal: 10,
+            ),
             height: MediaQuery.sizeOf(context).height * 0.0009,
             color: Colors.white,
           ),
           SingleChildScrollView(
             child: SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.43,
-                child: uploadAudioVideoController.tabStatus.value
-                    ? buildRecommendedSoundsList()
-                    : buildDeviceAudioList()),
+              height: MediaQuery.sizeOf(context).height * 0.43,
+              child: uploadAudioVideoController.tabStatus.value
+                  ? buildRecommendedSoundsList()
+                  : buildDeviceAudioList(),
+            ),
           ),
           Container(
             margin: const EdgeInsets.symmetric(
@@ -145,10 +149,11 @@ class AddSoundBottomSheet extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: uploadAudioVideoController
-                                        .isOriginalSoundSelected.value
-                                    ? Colors.red
-                                    : Colors.grey),
+                              color: uploadAudioVideoController
+                                      .isOriginalSoundSelected.value
+                                  ? Colors.red
+                                  : Colors.grey,
+                            ),
                             color: uploadAudioVideoController
                                     .isOriginalSoundSelected.value
                                 ? Colors.red
@@ -165,7 +170,7 @@ class AddSoundBottomSheet extends StatelessWidget {
                                 )
                               : const SizedBox.shrink(),
                         ),
-                         SizedBox(width: Get.width * 0.02),
+                        SizedBox(width: Get.width * 0.02),
                         const Text(
                           'Original Sound',
                           style: TextStyle(
@@ -180,7 +185,8 @@ class AddSoundBottomSheet extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  uploadAudioVideoController.selectAudioBottomSheet();
+                  uploadAudioVideoController
+                      .showVolumeSliderBottomSheet(context);
                 },
                 child: SizedBox(
                   height: Get.height * 0.03,

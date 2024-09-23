@@ -39,6 +39,10 @@ class UploadAudioVideoController extends GetxController {
 
   final player = AudioPlayer();
 
+  RxDouble videoVolume = 1.0.obs; // Volume for the original video (1.0 = 100%)
+  RxDouble selectedAudioVolume =
+      1.0.obs; // Volume for the selected audio (1.0 = 100%)
+
   static const _chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
   final Random _rnd = Random();
@@ -74,7 +78,7 @@ class UploadAudioVideoController extends GetxController {
       ..initialize().then((_) {
         isVideoInitialized.value = true;
         videoController.play();
-        videoController.setVolume(1);
+        videoController.setVolume(videoVolume.value);
         videoController.setLooping(true);
       });
   }
@@ -199,6 +203,7 @@ class UploadAudioVideoController extends GetxController {
           .setAudioSource(AudioSource.uri(Uri.parse(audioPath)))
           .then((value) {
         player.play();
+        player.setVolume(selectedAudioVolume.value);
       });
     } on PlayerException catch (e) {
       debugPrint("Error loading audio source: $e");
@@ -331,4 +336,78 @@ class UploadAudioVideoController extends GetxController {
 
   String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
       length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+
+  ///************ Method to show volume slider dialog ************///
+  // Show Volume Slider in Bottom Sheet
+  void showVolumeSliderBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(15),
+        ),
+        side: BorderSide(
+          color: Colors.red,
+        ),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the bottom sheet
+                    },
+                    child: const Text('Done'),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 24.0),
+                child: Text('Original Sound'),
+              ),
+              Obx(() => Slider(
+                    value: videoVolume.value,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: (newValue) {
+                      videoVolume.value =  double.parse(newValue.toStringAsFixed(1));
+                      videoController.setVolume(videoVolume.value);
+                    },
+                  )),
+              const Padding(
+                padding: EdgeInsets.only(
+                  left: 24.0,
+                ),
+                child: Text('Added Sound'),
+              ),
+              Obx(
+                () => Slider(
+                  value: selectedAudioVolume.value,
+                  min: 0.0,
+                  max: 1.0,
+                  onChanged: (value) {
+                    selectedAudioVolume.value =
+                        double.parse(value.toStringAsFixed(1));
+
+                    // Update the player volume in real-time
+                    player.setVolume(selectedAudioVolume.value);
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

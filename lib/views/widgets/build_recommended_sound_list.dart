@@ -39,15 +39,15 @@ Widget buildRecommendedSoundsList() {
                             ''; // update song name controller
                     uploadAudioVideoController.selectedAudio.value =
                         sounds[index]['name'] ?? ''; // update selected audio
-                    uploadAudioVideoController.selectedAudioPath.value = sounds[index]['fullPath'] ?? ''; // Save the audio path
+                    uploadAudioVideoController.selectedAudioPath.value =
+                        sounds[index]['fullPath'] ?? ''; // Save the audio path
                     uploadAudioVideoController.playAudio(
                         audioName: sounds[index]['name'] ?? '',
                         audioPath:
                             sounds[index]['fullPath'] ?? ''); // play audio
                   },
-                  child: Container(
+                  child: SizedBox(
                     width: MediaQuery.of(context).size.width * 0.765,
-                    // color: Colors.blue,
                     child: Row(
                       children: [
                         Container(
