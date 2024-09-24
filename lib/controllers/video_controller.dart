@@ -2,8 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:shorts/constants.dart';
 import 'package:shorts/models/video.dart';
+import 'package:video_player/video_player.dart';
 
 class VideoController extends GetxController {
+  final videoPlayerController = VideoPlayerController;
   final Rx<List<Video>> _videoList = Rx<List<Video>>([]);
 
   List<Video> get videoList => _videoList.value;

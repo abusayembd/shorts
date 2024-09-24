@@ -12,7 +12,7 @@ import 'package:shorts/views/screens/video_screen.dart';
 List pages = [
   VideoScreen(),
   SearchScreen(),
-   AddVideoScreen(),
+   const AddVideoScreen(),
   const MessageScreen(),
   ProfileScreen(uid: authController.user.uid),
 ];
@@ -21,6 +21,10 @@ List pages = [
 const backgroundColor = Colors.black;
 var buttonColor = Colors.red[400];
 const borderColor = Colors.grey;
+
+// Strings
+const String appName = 'Shorts';
+
 
 // FIREBASE
 var firebaseAuth = FirebaseAuth.instance;

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -217,20 +218,38 @@ class UploadAudioVideoController extends GetxController {
     debugPrint("Audio stopped");
   }
 
+  Future<double> getVideoDuration(String videoPath) async {
+    final info = await FFprobeKit.getMediaInformation(videoPath);
+    final durationString = info.getMediaInformation()?.getDuration();
+    return double.parse(durationString ?? '0');
+  }
+
+
   ///************ Code for Replacing Audio with FFmpeg: ************///
   //
   Future<String?> replaceAudioInVideo(
       String videoPath, String audioPath) async {
     try {
+      double videoDuration = await getVideoDuration(videoPath);
+      debugPrint(' AAA Video duration: $videoDuration');
       final directory = await getTemporaryDirectory();
       String replacedSongOutputFilePath =
           '${directory.path}/${getRandomString(15)}.mp4';
 
       // FFmpeg command to replace audio in the video
 
+      // String ffmpegCommand = isOriginalSoundSelected.value
+      //     ? '-i $videoPath -i $audioPath -filter_complex "[0:a][1:a]amix=inputs=2:duration=shortest" -c:v copy -map 0:v:0 -map 0:a -map 1:a:0 -shortest $replacedSongOutputFilePath'
+      //     : '-i $videoPath -i $audioPath -c:v copy -map 0:v:0 -map 1:a:0 -shortest $replacedSongOutputFilePath';
+
+      // String ffmpegCommand = isOriginalSoundSelected.value
+      //     ? '-i $videoPath -i $audioPath -filter_complex "[1:a]volume=${selectedAudioVolume.value}[a1];[0:a][a1]amix=inputs=2:duration=shortest" -c:v copy -map 0:v:0 -map 0:a -map 1:a:0 -shortest $replacedSongOutputFilePath'
+      //     : '-i $videoPath -i $audioPath -filter:a "volume=${selectedAudioVolume.value}" -c:v copy -map 0:v:0 -map 1:a:0 -shortest $replacedSongOutputFilePath';
+
       String ffmpegCommand = isOriginalSoundSelected.value
-          ? '-i $videoPath -i $audioPath -filter_complex "[0:a][1:a]amix=inputs=2:duration=shortest" -c:v copy -map 0:v:0 -map 0:a -map 1:a:0 -shortest $replacedSongOutputFilePath'
-          : '-i $videoPath -i $audioPath -c:v copy -map 0:v:0 -map 1:a:0 -shortest $replacedSongOutputFilePath';
+          ? '-i $videoPath -i $audioPath -filter_complex "[1:a]volume=${selectedAudioVolume.value}[a1];[0:a][a1]amix=inputs=2:duration=shortest" -c:v copy -map 0:v:0 -map 0:a -map 1:a:0 -t $videoDuration $replacedSongOutputFilePath'
+          : '-i $videoPath -i $audioPath -filter:a "volume=${selectedAudioVolume.value}" -c:v copy -map 0:v:0 -map 1:a:0 -t $videoDuration $replacedSongOutputFilePath';
+
 
       // Execute the FFmpeg command
       final session = await FFmpegKit.execute(ffmpegCommand);
@@ -373,22 +392,28 @@ class UploadAudioVideoController extends GetxController {
                   ),
                 ],
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 24.0),
-                child: Text('Original Sound'),
-              ),
-              Obx(() => Slider(
-                    value: videoVolume.value,
-                    min: 0.0,
-                    max: 1.0,
-                    onChanged: (newValue) {
-                      videoVolume.value =
-                          double.parse(newValue.toStringAsFixed(1));
-                      videoController.setVolume(videoVolume.value);
-                    },
-                  )),
               Visibility(
-                visible: selectedAudio.value != '',
+                visible: isOriginalSoundSelected.value,
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 24.0),
+                  child: Text('Original Sound'),
+                ),
+              ),
+              Visibility(
+                visible: isOriginalSoundSelected.value,
+                child: Obx(() => Slider(
+                      value: videoVolume.value,
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: (newValue) {
+                        videoVolume.value =
+                            double.parse(newValue.toStringAsFixed(1));
+                        videoController.setVolume(videoVolume.value);
+                      },
+                    )),
+              ),
+              Visibility(
+                visible: selectedAudio.value != '' ,
                 child: const Padding(
                   padding: EdgeInsets.only(
                     left: 24.0,

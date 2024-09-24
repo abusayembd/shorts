@@ -6,8 +6,9 @@ import 'package:shorts/controllers/video_controller.dart';
 import 'package:shorts/views/screens/comment_screen.dart';
 import 'package:shorts/views/widgets/circle_animation.dart';
 import 'package:get/get.dart';
-import 'package:shorts/views/widgets/video_player_iten.dart';
+import 'package:shorts/views/widgets/video_player_item.dart';
 import 'package:ticker_text/ticker_text.dart';
+import 'package:video_player/video_player.dart';
 
 class VideoScreen extends StatelessWidget {
   VideoScreen({super.key});
@@ -49,7 +50,7 @@ class VideoScreen extends StatelessWidget {
       child: Column(
         children: [
           Container(
-              padding: EdgeInsets.all(11),
+              padding: const EdgeInsets.all(11),
               height: 50,
               width: 50,
               decoration: BoxDecoration(
@@ -74,8 +75,6 @@ class VideoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: Obx(() {
         return PageView.builder(
@@ -88,6 +87,7 @@ class VideoScreen extends StatelessWidget {
               children: [
                 VideoPlayerItem(
                   videoUrl: data.videoUrl,
+
                 ),
                 Column(
                   children: [
@@ -156,14 +156,17 @@ class VideoScreen extends StatelessWidget {
                                         ),
                                       )
                                     ],
-                                  )
+                                  ),
+
                                 ],
                               ),
                             ),
                           ),
+
                           Container(
-                            width: 100,
-                            margin: EdgeInsets.only(top: size.height / 5),
+                            width: 80,
+                            margin: EdgeInsets.only(top: Get.height / 5),
+                            ///color: Colors.red,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -177,18 +180,18 @@ class VideoScreen extends StatelessWidget {
                                           videoController.likeVideo(data.id),
                                       child: Icon(
                                         Icons.favorite,
-                                        size: 40,
+                                        size: Get.height * 0.04,
                                         color: data.likes.contains(
                                                 authController.user.uid)
                                             ? Colors.red
                                             : Colors.white,
                                       ),
                                     ),
-                                    const SizedBox(height: 7),
+                                     SizedBox(height: Get.height * 0.001),
                                     Text(
                                       data.likes.length.toString(),
-                                      style: const TextStyle(
-                                        fontSize: 20,
+                                      style:  TextStyle(
+                                        fontSize: Get.height * 0.02,
                                         color: Colors.white,
                                       ),
                                     )
@@ -204,13 +207,13 @@ class VideoScreen extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      child: const Icon(
+                                      child:  Icon(
                                         Icons.comment,
-                                        size: 40,
+                                        size: Get.height * 0.04,
                                         color: Colors.white,
                                       ),
                                     ),
-                                    const SizedBox(height: 7),
+                                     SizedBox(height: Get.height * 0.001),
                                     Text(
                                       data.commentCount.toString(),
                                       style: const TextStyle(
@@ -224,17 +227,17 @@ class VideoScreen extends StatelessWidget {
                                   children: [
                                     InkWell(
                                       onTap: () {},
-                                      child: const Icon(
+                                      child:  Icon(
                                         Icons.reply,
-                                        size: 40,
+                                        size: Get.height * 0.04,
                                         color: Colors.white,
                                       ),
                                     ),
-                                    const SizedBox(height: 7),
+                                     SizedBox(height: Get.height * 0.001),
                                     Text(
                                       data.shareCount.toString(),
-                                      style: const TextStyle(
-                                        fontSize: 20,
+                                      style:  TextStyle(
+                                        fontSize: Get.height * 0.02,
                                         color: Colors.white,
                                       ),
                                     )
@@ -249,6 +252,13 @@ class VideoScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // VideoProgressIndicator(videoController., allowScrubbing: true,
+                    //   colors: const VideoProgressColors(
+                    //     playedColor: Colors.white,
+                    //     bufferedColor: Colors.grey,
+                    //     backgroundColor: Colors.black,
+                    //   ),
+                    // )
                   ],
                 ),
               ],
