@@ -10,11 +10,12 @@ class ConfirmScreen extends StatelessWidget {
   final File videoFile;
   final String videoPath;
 
-  ConfirmScreen({
+  const ConfirmScreen({
     super.key,
     required this.videoFile,
     required this.videoPath,
   });
+
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +24,14 @@ class ConfirmScreen extends StatelessWidget {
       UploadAudioVideoController(),
     )..initializeVideo(videoFile);
     return PopScope(
-      onPopInvoked: (value) async {
-        await Get.delete<UploadAudioVideoController>();
-        Get.back();
+      canPop: true,
+      onPopInvokedWithResult: (bool didPop, FormData? result) {
+        if (!didPop) {
+          Navigator.pop(context, result);
+          Future.microtask(() async {
+            await Get.delete<UploadAudioVideoController>();
+          });
+        }
       },
       child: Scaffold(
         body: Stack(

@@ -284,16 +284,16 @@ class UploadAudioVideoController extends GetxController {
       String uid = firebaseAuth.currentUser!.uid;
       DocumentSnapshot userDoc =
           await firestore.collection('users').doc(uid).get();
-      // get id
+
       var allDocs = await firestore.collection('videos').get();
       int len = allDocs.docs.length;
-      String videoUrl = await _uploadVideoToStorage("Video $len", videoPath);
-      String thumbnail = await _uploadImageToStorage("Video $len", videoPath);
+      String videoUrl = await _uploadVideoToStorage("Video ${len++}", videoPath);
+      String thumbnail = await _uploadImageToStorage("Video ${len++}", videoPath);
 
       Video video = Video(
         username: (userDoc.data()! as Map<String, dynamic>)['name'],
         uid: uid,
-        id: "Video $len",
+        id: "Video ${len++}",
         likes: [],
         commentCount: 0,
         shareCount: 0,
@@ -304,7 +304,7 @@ class UploadAudioVideoController extends GetxController {
         thumbnail: thumbnail,
       );
 
-      await firestore.collection('videos').doc('Video $len').set(
+      await firestore.collection('videos').doc('Video ${len++}').set(
             video.toJson(),
           );
       Get.back();

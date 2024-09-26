@@ -17,8 +17,6 @@ class VideoController extends GetxController {
 
   List<Video> get videoList => _videoList.value;
 
-  //LateInitializationError: Field 'videoPlayerController' has not been initialized.
-  //solve this error by initializing the videoPlayerController in the onInit() method
 
   @override
   void onInit() {

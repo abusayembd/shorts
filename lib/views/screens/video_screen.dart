@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:shorts/constants.dart';
 import 'package:shorts/controllers/video_controller.dart';
@@ -8,7 +6,6 @@ import 'package:shorts/views/widgets/circle_animation.dart';
 import 'package:get/get.dart';
 import 'package:shorts/views/widgets/video_player_item.dart';
 import 'package:ticker_text/ticker_text.dart';
-import 'package:video_player/video_player.dart';
 
 class VideoScreen extends StatelessWidget {
   VideoScreen({super.key});
@@ -82,11 +79,10 @@ class VideoScreen extends StatelessWidget {
           controller: PageController(initialPage: 0, viewportFraction: 1),
           scrollDirection: Axis.vertical,
           itemBuilder: (context, index) {
-            final data = videoController.videoList[index];
             return Stack(
               children: [
                 VideoPlayerItem(
-                  videoUrl: data.videoUrl,
+                  videoUrl: videoController.videoList[index].videoUrl,
                 ),
                 Column(
                   children: [
@@ -110,7 +106,7 @@ class VideoScreen extends StatelessWidget {
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Text(
-                                    data.username,
+                                    videoController.videoList[index].username,
                                     style: const TextStyle(
                                       fontSize: 20,
                                       color: Colors.white,
@@ -118,7 +114,7 @@ class VideoScreen extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    data.caption,
+                                    videoController.videoList[index].caption,
                                     style: const TextStyle(
                                       fontSize: 15,
                                       color: Colors.white,
@@ -145,7 +141,8 @@ class VideoScreen extends StatelessWidget {
                                               const Duration(seconds: 4),
                                           returnCurve: Curves.linear,
                                           child: Text(
-                                            data.songName,
+                                            videoController
+                                                .videoList[index].songName,
                                             style: const TextStyle(
                                               fontSize: 15,
                                               color: Colors.white,
@@ -169,25 +166,29 @@ class VideoScreen extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 buildProfile(
-                                  data.profilePhoto,
+                                  videoController.videoList[index].profilePhoto,
                                 ),
                                 Column(
                                   children: [
                                     InkWell(
-                                      onTap: () =>
-                                          videoController.likeVideo(data.id),
+                                      onTap: () => videoController.likeVideo(
+                                          videoController.videoList[index].id),
                                       child: Icon(
                                         Icons.favorite,
                                         size: Get.height * 0.04,
-                                        color: data.likes.contains(
-                                                authController.user.uid)
+                                        color: videoController
+                                                .videoList[index].likes
+                                                .contains(
+                                                    authController.user.uid)
                                             ? Colors.red
                                             : Colors.white,
                                       ),
                                     ),
                                     SizedBox(height: Get.height * 0.001),
                                     Text(
-                                      data.likes.length.toString(),
+                                      videoController
+                                          .videoList[index].likes.length
+                                          .toString(),
                                       style: TextStyle(
                                         fontSize: Get.height * 0.02,
                                         color: Colors.white,
@@ -201,7 +202,8 @@ class VideoScreen extends StatelessWidget {
                                       onTap: () => Navigator.of(context).push(
                                         MaterialPageRoute(
                                           builder: (context) => CommentScreen(
-                                            id: data.id,
+                                            id: videoController
+                                                .videoList[index].id,
                                           ),
                                         ),
                                       ),
@@ -213,7 +215,9 @@ class VideoScreen extends StatelessWidget {
                                     ),
                                     SizedBox(height: Get.height * 0.001),
                                     Text(
-                                      data.commentCount.toString(),
+                                      videoController
+                                          .videoList[index].commentCount
+                                          .toString(),
                                       style: const TextStyle(
                                         fontSize: 20,
                                         color: Colors.white,
@@ -233,7 +237,9 @@ class VideoScreen extends StatelessWidget {
                                     ),
                                     SizedBox(height: Get.height * 0.001),
                                     Text(
-                                      data.shareCount.toString(),
+                                      videoController
+                                          .videoList[index].shareCount
+                                          .toString(),
                                       style: TextStyle(
                                         fontSize: Get.height * 0.02,
                                         color: Colors.white,
@@ -242,7 +248,8 @@ class VideoScreen extends StatelessWidget {
                                   ],
                                 ),
                                 CircleAnimation(
-                                  child: buildMusicAlbum(data.profilePhoto),
+                                  child: buildMusicAlbum(videoController
+                                      .videoList[index].profilePhoto),
                                 ),
                               ],
                             ),
