@@ -224,7 +224,6 @@ class UploadAudioVideoController extends GetxController {
     return double.parse(durationString ?? '0');
   }
 
-
   ///************ Code for Replacing Audio with FFmpeg: ************///
   //
   Future<String?> replaceAudioInVideo(
@@ -249,7 +248,6 @@ class UploadAudioVideoController extends GetxController {
       String ffmpegCommand = isOriginalSoundSelected.value
           ? '-i $videoPath -i $audioPath -filter_complex "[1:a]volume=${selectedAudioVolume.value}[a1];[0:a][a1]amix=inputs=2:duration=shortest" -c:v copy -map 0:v:0 -map 0:a -map 1:a:0 -t $videoDuration $replacedSongOutputFilePath'
           : '-i $videoPath -i $audioPath -filter:a "volume=${selectedAudioVolume.value}" -c:v copy -map 0:v:0 -map 1:a:0 -t $videoDuration $replacedSongOutputFilePath';
-
 
       // Execute the FFmpeg command
       final session = await FFmpegKit.execute(ffmpegCommand);
@@ -326,32 +324,47 @@ class UploadAudioVideoController extends GetxController {
   }
 
   Future<String> _uploadVideoToStorage(String id, String videoPath) async {
-    Reference ref = firebaseStorage.ref().child('videos').child(id);
+    try {
+      Reference ref = firebaseStorage.ref().child('videos').child(id);
+      UploadTask uploadTask = ref.putFile(await _compressVideo(videoPath));
 
-    UploadTask uploadTask = ref.putFile(await _compressVideo(videoPath));
-    // listen to the upload process
-    uploadTask.snapshotEvents.listen((event) {
-      double percentage = 100 * (event.bytesTransferred / event.totalBytes);
-      progress.value = percentage; // Update the progress
-    });
-
-    TaskSnapshot snap = await uploadTask;
-    String downloadUrl = await snap.ref.getDownloadURL();
-    return downloadUrl;
+      // listen to the upload process
+      uploadTask.snapshotEvents.listen((event) {
+        double percentage = 100 * (event.bytesTransferred / event.totalBytes);
+        progress.value = percentage; // Update the progress
+      });
+      TaskSnapshot snap = await uploadTask;
+      String downloadUrl = await snap.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      debugPrint("Error uploading video: $e");
+      Get.snackbar('Error', 'Error uploading video: $e');
+      return '';
+    }
   }
 
+
+
+  // upload thumbnail
   Future<String> _uploadImageToStorage(String id, String videoPath) async {
-    Reference ref = firebaseStorage.ref().child('thumbnails').child(id);
-    UploadTask uploadTask = ref.putFile(await _getThumbnail(videoPath));
-    TaskSnapshot snap = await uploadTask;
-    String downloadUrl = await snap.ref.getDownloadURL();
-    return downloadUrl;
+    try {
+      Reference ref = firebaseStorage.ref().child('thumbnails').child(id);
+      UploadTask uploadTask = ref.putFile(await _getThumbnail(videoPath));
+      TaskSnapshot snap = await uploadTask;
+      String downloadUrl = await snap.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      debugPrint("Error uploading thumbnail: $e");
+      Get.snackbar('Error', 'Error uploading thumbnail: $e');
+      return '';
+    }
   }
-
   _getThumbnail(String videoPath) async {
     final thumbnail = await VideoCompress.getFileThumbnail(videoPath);
     return thumbnail;
   }
+
+
 
   String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
       length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
@@ -413,7 +426,7 @@ class UploadAudioVideoController extends GetxController {
                     )),
               ),
               Visibility(
-                visible: selectedAudio.value != '' ,
+                visible: selectedAudio.value != '',
                 child: const Padding(
                   padding: EdgeInsets.only(
                     left: 24.0,

@@ -5,14 +5,25 @@ import 'package:shorts/models/video.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoController extends GetxController {
-  final videoPlayerController = VideoPlayerController;
+  // late VideoPlayerController videoPlayerController;
   final Rx<List<Video>> _videoList = Rx<List<Video>>([]);
+  RxBool isPlaying = false.obs; // Observed variable for play status
+
+  // // method to get current video position
+  // Duration get currentPosition => videoPlayerController.value.position;
+  //
+  // //  method to get video duration
+  // Duration get videoDuration => videoPlayerController.value.duration;
 
   List<Video> get videoList => _videoList.value;
+
+  //LateInitializationError: Field 'videoPlayerController' has not been initialized.
+  //solve this error by initializing the videoPlayerController in the onInit() method
 
   @override
   void onInit() {
     super.onInit();
+   // videoPlayerController.initialize();
     _videoList.bindStream(
         firestore.collection('videos').snapshots().map((QuerySnapshot query) {
       List<Video> retVal = [];
@@ -24,6 +35,39 @@ class VideoController extends GetxController {
       return retVal;
     }));
   }
+
+  // void initializeVideo(String videoUrl) {
+  //   videoPlayerController =
+  //       VideoPlayerController.networkUrl(Uri.parse(videoUrl))
+  //         ..initialize().then((_) {
+  //           play();
+  //           videoPlayerController.setVolume(1);
+  //
+  //           // Add listener to loop the video
+  //           videoPlayerController.addListener(() {
+  //             if (videoPlayerController.value.position >=
+  //                 videoPlayerController.value.duration) {
+  //               videoPlayerController
+  //                   .seekTo(Duration.zero); // Restart from beginning
+  //               play(); // Play the video again
+  //             }
+  //           });
+  //         });
+  // }
+  //
+  // void play() {
+  //   videoPlayerController.play();
+  //   isPlaying.value = true; // Update play status
+  // }
+  //
+  // void pause() {
+  //   videoPlayerController.pause();
+  //   isPlaying.value = false; // Update play status
+  // }
+  //
+  // void disposeVideoController() {
+  //   videoPlayerController.dispose();
+  // }
 
   likeVideo(String id) async {
     DocumentSnapshot doc = await firestore.collection('videos').doc(id).get();

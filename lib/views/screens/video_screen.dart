@@ -87,7 +87,6 @@ class VideoScreen extends StatelessWidget {
               children: [
                 VideoPlayerItem(
                   videoUrl: data.videoUrl,
-
                 ),
                 Column(
                   children: [
@@ -138,10 +137,10 @@ class VideoScreen extends StatelessWidget {
                                         child: TickerText(
                                           scrollDirection: Axis.horizontal,
                                           speed: 20,
-                                          startPauseDuration:
-                                              const Duration(milliseconds: 1000),
-                                          returnDuration: const Duration(
-                                              milliseconds: 800),
+                                          startPauseDuration: const Duration(
+                                              milliseconds: 1000),
+                                          returnDuration:
+                                              const Duration(milliseconds: 800),
                                           endPauseDuration:
                                               const Duration(seconds: 4),
                                           returnCurve: Curves.linear,
@@ -157,15 +156,14 @@ class VideoScreen extends StatelessWidget {
                                       )
                                     ],
                                   ),
-
                                 ],
                               ),
                             ),
                           ),
-
                           Container(
                             width: 80,
                             margin: EdgeInsets.only(top: Get.height / 5),
+
                             ///color: Colors.red,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -187,10 +185,10 @@ class VideoScreen extends StatelessWidget {
                                             : Colors.white,
                                       ),
                                     ),
-                                     SizedBox(height: Get.height * 0.001),
+                                    SizedBox(height: Get.height * 0.001),
                                     Text(
                                       data.likes.length.toString(),
-                                      style:  TextStyle(
+                                      style: TextStyle(
                                         fontSize: Get.height * 0.02,
                                         color: Colors.white,
                                       ),
@@ -207,13 +205,13 @@ class VideoScreen extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      child:  Icon(
+                                      child: Icon(
                                         Icons.comment,
                                         size: Get.height * 0.04,
                                         color: Colors.white,
                                       ),
                                     ),
-                                     SizedBox(height: Get.height * 0.001),
+                                    SizedBox(height: Get.height * 0.001),
                                     Text(
                                       data.commentCount.toString(),
                                       style: const TextStyle(
@@ -227,16 +225,16 @@ class VideoScreen extends StatelessWidget {
                                   children: [
                                     InkWell(
                                       onTap: () {},
-                                      child:  Icon(
+                                      child: Icon(
                                         Icons.reply,
                                         size: Get.height * 0.04,
                                         color: Colors.white,
                                       ),
                                     ),
-                                     SizedBox(height: Get.height * 0.001),
+                                    SizedBox(height: Get.height * 0.001),
                                     Text(
                                       data.shareCount.toString(),
-                                      style:  TextStyle(
+                                      style: TextStyle(
                                         fontSize: Get.height * 0.02,
                                         color: Colors.white,
                                       ),
@@ -252,13 +250,18 @@ class VideoScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // VideoProgressIndicator(videoController., allowScrubbing: true,
+                    // VideoProgressIndicator(
+                    //   videoController.videoPlayerController,
+                    //   allowScrubbing: true,
+                    //   // Allow user to scrub through the video
                     //   colors: const VideoProgressColors(
-                    //     playedColor: Colors.white,
+                    //     playedColor: Colors.red,
+                    //     // Color for played portion
                     //     bufferedColor: Colors.grey,
-                    //     backgroundColor: Colors.black,
+                    //     // Color for buffered portion
+                    //     backgroundColor: Colors.black, // Background color
                     //   ),
-                    // )
+                    // ),
                   ],
                 ),
               ],

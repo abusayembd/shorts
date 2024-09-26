@@ -30,144 +30,140 @@ class ConfirmScreen extends StatelessWidget {
       child: Scaffold(
         body: Stack(
           children: [
-            SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SingleChildScrollView(
-                    physics: BouncingScrollPhysics(),
-                    child: SizedBox(
-                      height: 30,
-                    ),
+            Stack(
+              children: [
+                const SingleChildScrollView(
+                  physics: BouncingScrollPhysics(),
+                  child: SizedBox(
+                    height: 30,
                   ),
-                  Obx(
-                    () => uploadAudioVideoController.isVideoInitialized.value
-                        ? Container(
-                            constraints: BoxConstraints(
-                              minHeight:
-                                  MediaQuery.of(context).size.height * .75,
-                            ),
-                            child: Center(
-                              child: AspectRatio(
-                                aspectRatio: uploadAudioVideoController
-                                    .videoController.value.aspectRatio,
-                                child: VideoPlayer(
-                                    uploadAudioVideoController.videoController),
-                              ),
-                            ),
-                          )
-                        : const Center(
-                            child: CircularProgressIndicator(),
+                ),
+                Obx(
+                  () => uploadAudioVideoController.isVideoInitialized.value
+                      ? Container(
+                          constraints: BoxConstraints(
+                            minHeight: MediaQuery.of(context).size.height * .75,
                           ),
-                  ),
-                  SizedBox(
+                          child: Center(
+                            child: AspectRatio(
+                              aspectRatio: uploadAudioVideoController
+                                  .videoController.value.aspectRatio,
+                              child: VideoPlayer(
+                                  uploadAudioVideoController.videoController),
+                            ),
+                          ),
+                        )
+                      : const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  child: SizedBox(
                     width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height * 0.21,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 10),
-                            width: MediaQuery.of(context).size.width - 20,
-                            child: TextInputField(
-                              controller:
-                                  uploadAudioVideoController.songNameController,
-                              labelText: 'Song Name',
-                              icon: Icons.music_note,
-                            ),
+                    height: MediaQuery.of(context).size.height * 0.25,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          width: MediaQuery.of(context).size.width - 20,
+                          child: TextInputField(
+                            controller:
+                                uploadAudioVideoController.songNameController,
+                            labelText: 'Song Name',
+                            icon: Icons.music_note,
                           ),
-                          const SizedBox(
-                            height: 10,
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          width: MediaQuery.of(context).size.width - 20,
+                          child: TextInputField(
+                            controller:
+                                uploadAudioVideoController.captionController,
+                            labelText: 'Caption',
+                            icon: Icons.closed_caption,
                           ),
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 10),
-                            width: MediaQuery.of(context).size.width - 20,
-                            child: TextInputField(
-                              controller:
-                                  uploadAudioVideoController.captionController,
-                              labelText: 'Caption',
-                              icon: Icons.closed_caption,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          ElevatedButton(
-                            onPressed: () => uploadAudioVideoController
-                                .selectAudioBottomSheet(),
-                            child: const Text(
-                              'Add Sound',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => uploadAudioVideoController
+                                  .selectAudioBottomSheet(),
+                              child: const Text(
+                                'Add Sound',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              ///updated code
-                              // Check if a song is selected
-                              if (uploadAudioVideoController
-                                  .selectedAudio.value.isEmpty) {
-                                // Raw video upload flow
-                                uploadAudioVideoController.uploadVideo(
-                                  uploadAudioVideoController
-                                      .songNameController.text,
-                                  uploadAudioVideoController
-                                      .captionController.text,
-                                  videoPath,
-                                );
-                              } else {
-                                // Replacing audio and then uploading the video
-                                String? replacedVideoPath =
-                                    await uploadAudioVideoController
+                            ElevatedButton(
+                              onPressed: () async {
+                                ///updated code
+                                // Check if a song is selected
+                                //if not selected then upload the video as it is
+                                uploadAudioVideoController
+                                        .selectedAudio.value.isEmpty
+                                    // Raw video upload flow
+                                    ? uploadAudioVideoController.uploadVideo(
+                                        uploadAudioVideoController
+                                            .songNameController.text,
+                                        uploadAudioVideoController
+                                            .captionController.text,
+                                        videoPath,
+                                      )
+                                    : // Replacing audio and then uploading the video
+                                    uploadAudioVideoController
                                         .replaceAudioInVideo(
-                                  videoPath,
-                                  uploadAudioVideoController.selectedAudioPath
-                                      .value, // Path to the selected audio file
-                                );
+                                            videoPath,
+                                            uploadAudioVideoController
+                                                .selectedAudioPath.value)
+                                        .then((replacedVideoPath) =>
+                                            replacedVideoPath != null
+                                                // // Upload the video with replaced audio
+                                                ? uploadAudioVideoController
+                                                    .uploadVideo(
+                                                        uploadAudioVideoController
+                                                            .songNameController
+                                                            .text,
+                                                        uploadAudioVideoController
+                                                            .captionController
+                                                            .text,
+                                                        replacedVideoPath)
+                                                : debugPrint(
+                                                    'Error replacing audio'));
+                              },
 
-                                if (replacedVideoPath != null) {
-                                  // Upload the video with replaced audio
-                                  uploadAudioVideoController.uploadVideo(
-                                    uploadAudioVideoController
-                                        .songNameController.text,
-                                    uploadAudioVideoController
-                                        .captionController.text,
-                                    replacedVideoPath, // Use the path of the video with replaced audio
-                                  );
-                                } else {
-                                  debugPrint('Error replacing audio');
-                                }
-                              }
-                            },
-                            ///previously it was like this
-                            // uploadAudioVideoController.uploadVideo(
-                            //     uploadAudioVideoController
-                            //         .songNameController.text,
-                            //     uploadAudioVideoController
-                            //         .captionController.text,
-                            //     videoPath),
-                            child: const Text(
-                              'Share!',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
+                              ///previously it was like this
+                              // uploadAudioVideoController.uploadVideo(
+                              //     uploadAudioVideoController
+                              //         .songNameController.text,
+                              //     uploadAudioVideoController
+                              //         .captionController.text,
+                              //     videoPath),
+                              child: const Text(
+                                'Share!',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          )
-                        ],
-                      ),
+                            SizedBox(
+                              height: Get.height * 0.1,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  )
-                ],
-              ),
+                  ),
+                )
+              ],
             ),
             Obx(() {
               if (uploadAudioVideoController.uploading.value) {
