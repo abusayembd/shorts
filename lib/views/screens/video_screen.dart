@@ -98,6 +98,7 @@ class VideoScreen extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.only(
                                 left: 20,
+
                               ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -161,7 +162,7 @@ class VideoScreen extends StatelessWidget {
                             width: 80,
                             margin: EdgeInsets.only(top: Get.height / 5),
 
-                            ///color: Colors.red,
+                            //color: Colors.red,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [

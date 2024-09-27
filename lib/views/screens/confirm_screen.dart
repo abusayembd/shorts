@@ -6,6 +6,8 @@ import 'package:shorts/views/widgets/text_input_field.dart';
 
 import 'package:video_player/video_player.dart';
 
+import '../widgets/edit_video_widget.dart';
+
 class ConfirmScreen extends StatelessWidget {
   final File videoFile;
   final String videoPath;
@@ -16,13 +18,16 @@ class ConfirmScreen extends StatelessWidget {
     required this.videoPath,
   });
 
-
   @override
   Widget build(BuildContext context) {
     // Initialize the UploadAudioVideoController and video controller
     final UploadAudioVideoController uploadAudioVideoController = Get.put(
       UploadAudioVideoController(),
     )..initializeVideo(videoFile);
+    // final VideoEditingController uploadAudioVideoController = Get.put(
+    //   VideoEditingController(),
+    // )..initializeVideo(videoFile);
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (bool didPop, FormData? result) {
@@ -50,14 +55,39 @@ class ConfirmScreen extends StatelessWidget {
                           constraints: BoxConstraints(
                             minHeight: MediaQuery.of(context).size.height * .75,
                           ),
-                          child: Center(
-                            child: AspectRatio(
-                              aspectRatio: uploadAudioVideoController
-                                  .videoController.value.aspectRatio,
-                              child: VideoPlayer(
-                                  uploadAudioVideoController.videoController),
+                          child: Stack(children: [
+                            Center(
+                              child: Hero(
+                                tag: 'videoHero',
+                                child: AspectRatio(
+                                  aspectRatio: uploadAudioVideoController
+                                      .videoController.value.aspectRatio,
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.all(
+                                      Radius.circular(20),
+                                    ),
+                                    child: VideoPlayer(
+                                        uploadAudioVideoController
+                                            .videoController),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              top: 100,
+                              right: 10,
+                              child: IconButton(
+                                icon: const Icon(Icons.movie_edit,
+                                    color: Colors.white),
+                                onPressed: () => Get.dialog(
+                                  EditVideoWidget(
+                                    uploadAudioVideoController:
+                                        uploadAudioVideoController,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ]),
                         )
                       : const Center(
                           child: CircularProgressIndicator(),
@@ -168,7 +198,7 @@ class ConfirmScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                )
+                ),
               ],
             ),
             Obx(() {
