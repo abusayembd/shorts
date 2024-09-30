@@ -90,7 +90,7 @@ class UploadAudioVideoController extends GetxController {
   //for trimming
   void generateThumbnails() async {
     thumbnails.clear();
-    int numberOfThumbnails = 10; // Adjust as needed
+    int numberOfThumbnails =  videoController.value.duration.inSeconds.toInt(); // Adjust as needed
     double eachPart = videoDuration.value / numberOfThumbnails;
 
     for (int i = 0; i < numberOfThumbnails; i++) {

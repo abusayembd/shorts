@@ -29,21 +29,21 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         endHandlePosition = trimAreaWidth;
         // Initialize end trim value
         widget.uploadAudioVideoController.endTrim.value =
             widget.uploadAudioVideoController.videoDuration.value;
-        //set the initial scroll position to the middle of the list
-        // Set the initial scroll position to the middle of the list
-        final itemWidth =
-            trimAreaWidth / widget.uploadAudioVideoController.thumbnails.length;
-        final initialScrollPosition =
-            (widget.uploadAudioVideoController.thumbnails.length * itemWidth) /
-                    2 -
-                (trimAreaWidth / 2); // Center the middle thumbnail
-        _scrollController.jumpTo(initialScrollPosition);
+        // // Set the initial scroll position to the middle of the list
+        // final itemWidth =
+        //     trimAreaWidth / widget.uploadAudioVideoController.thumbnails.length;
+        // final initialScrollPosition =
+        //     (widget.uploadAudioVideoController.thumbnails.length * itemWidth) /
+        //             2 -
+        //         (trimAreaWidth / 2); // Center the middle thumbnail
+        // _scrollController.jumpTo(initialScrollPosition);
       });
     });
   }
@@ -191,215 +191,258 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
             //
             Stack(
               children: [
-                Obx(
-                  () => widget.uploadAudioVideoController.thumbnails.isEmpty
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: List.generate(
-                              widget
-                                  .uploadAudioVideoController.thumbnails.length,
-                              (index) {
-                                int totalThumbnails = widget
-                                    .uploadAudioVideoController
-                                    .thumbnails
-                                    .length;
-                                double videoDurationInSeconds = widget
-                                    .uploadAudioVideoController
-                                    .videoDuration
-                                    .value;
-                                double secondsPerThumbnail =
-                                    videoDurationInSeconds / totalThumbnails;
+                Container(
+                  height: Get.height * 0.20,
+                  width: Get.width,
+                  // color: Colors.blue,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Column(
+                          children: [
+                            Obx(
+                              () => widget.uploadAudioVideoController.thumbnails
+                                      .isEmpty
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 10),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: List.generate(
+                                          widget.uploadAudioVideoController
+                                              .thumbnails.length,
+                                          (index) {
+                                            int totalThumbnails = widget
+                                                .uploadAudioVideoController
+                                                .thumbnails
+                                                .length;
+                                            double videoDurationInSeconds =
+                                                widget
+                                                    .uploadAudioVideoController
+                                                    .videoDuration
+                                                    .value;
+                                            double secondsPerThumbnail =
+                                                videoDurationInSeconds /
+                                                    totalThumbnails;
 
-                                int timeInSeconds = (index *
-                                        secondsPerThumbnail)
-                                    .round(); // Calculate the time for each thumbnail
-
-                                return Text(
-                                  "${(timeInSeconds ~/ 60).toString().padLeft(2, '0')}:${(timeInSeconds % 60).toString().padLeft(2, '0')}",
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 30),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      trimAreaWidth = constraints.maxWidth;
-                      return Obx(
-                        () => widget
-                                .uploadAudioVideoController.thumbnails.isEmpty
-                            ? const Center(child: CircularProgressIndicator())
-                            : Stack(
-                                children: [
-                                  // Thumbnail List
-                                  Column(
-                                    children: [
-
-                                      Container(
-                                        height: 60,
-                                        color: Colors.blue,
-                                        child: ListView.builder(
-                                          controller: _scrollController,
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount: widget
-                                              .uploadAudioVideoController
-                                              .thumbnails
-                                              .length,
-                                          itemBuilder: (context, index) {
-                                            return Image.memory(
-                                              widget.uploadAudioVideoController
-                                                  .thumbnails[index],
-                                              width: trimAreaWidth /
-                                                  widget
-                                                      .uploadAudioVideoController
-                                                      .thumbnails
-                                                      .length,
-                                              fit: BoxFit.cover,
+                                            int timeInSeconds = (index *
+                                                    secondsPerThumbnail)
+                                                .round(); // Calculate the time for each thumbnail
+                                            return SizedBox(
+                                              width: Get.width * 0.2,
+                                              child: Text(
+                                                "${(timeInSeconds ~/ 60).toString().padLeft(2, '0')}:${(timeInSeconds % 60).toString().padLeft(2, '0')}",
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
                                             );
                                           },
                                         ),
                                       ),
-                                      GestureDetector(
-                                        onTap: //add sound to video
-                                            () {},
-                                        child: Container(
-                                          margin: EdgeInsets.only(
-                                              top: Get.height * 0.010),
-                                          height: Get.height * 0.04,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(
-                                                Get.width * 0.01),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.music_note,
-                                                color: Colors.white,
-                                                size: Get.height * .025,
-                                              ),
-                                              Text(
-                                                "Add Sound",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: Get.height * .02,
+                                    ),
+                            ),
+
+                            ///
+                            /// Thumbnail List
+                            Obx(
+                              () => widget.uploadAudioVideoController.thumbnails
+                                      .isEmpty
+                                  ? const Center(
+                                      child: CircularProgressIndicator())
+                                  : Stack(
+                                      children: [
+                                        // Thumbnail List
+                                        Column(
+                                          children: [
+                                            Container(
+                                              height: Get.height * 0.06,
+                                              color: Colors.blue,
+                                              child: SingleChildScrollView(
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                controller: _scrollController,
+                                                child: SizedBox(
+                                                  width: widget
+                                                          .uploadAudioVideoController
+                                                          .thumbnails
+                                                          .length *
+                                                      Get.width *
+                                                      0.2,
+                                                  height: Get.height * 0.04,
+                                                  child: Row(
+                                                    children: List.generate(
+                                                      widget
+                                                          .uploadAudioVideoController
+                                                          .thumbnails
+                                                          .length,
+                                                      (index) {
+                                                        return Image.memory(
+                                                          widget
+                                                              .uploadAudioVideoController
+                                                              .thumbnails[index],
+                                                          width:
+                                                              Get.width * 0.2,
+                                                          fit: BoxFit.cover,
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
                                                 ),
-                                              )
-                                            ],
+                                              ),
+                                            ),
+                                            GestureDetector(
+                                              onTap: //add sound to video
+                                                  () => widget
+                                                      .uploadAudioVideoController
+                                                      .selectAudioBottomSheet(),
+                                              child: Container(
+                                                margin: EdgeInsets.only(
+                                                    top: Get.height * 0.010),
+                                                height: Get.height * 0.04,
+
+                                                width: widget
+                                                        .uploadAudioVideoController
+                                                        .thumbnails
+                                                        .length *
+                                                    Get.width *
+                                                    0.2,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey
+                                                      .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          Get.width * 0.01),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.music_note,
+                                                      color: Colors.white,
+                                                      size: Get.height * .025,
+                                                    ),
+                                                    Text(
+                                                      widget
+                                                              .uploadAudioVideoController
+                                                              .selectedAudio
+                                                              .value
+                                                              .isEmpty
+                                                          ? "Add Sound"
+                                                          : widget
+                                                              .uploadAudioVideoController
+                                                              .selectedAudio
+                                                              .value,
+
+                                                      //todo render-flex
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize:
+                                                            Get.height * .02,
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        //volume icon in the center
+
+                                        //Start Handle
+                                        Positioned(
+                                          left: startHandlePosition,
+                                          child: GestureDetector(
+                                            onHorizontalDragUpdate: (details) {
+                                              setState(() {
+                                                startHandlePosition +=
+                                                    details.delta.dx;
+                                                if (startHandlePosition < 0) {
+                                                  startHandlePosition = 0;
+                                                }
+                                                if (startHandlePosition >
+                                                    endHandlePosition -
+                                                        handleWidth) {
+                                                  startHandlePosition =
+                                                      endHandlePosition -
+                                                          handleWidth;
+                                                }
+
+                                                // Update start trim value in  widget.uploadAudioVideoController
+                                                widget
+                                                    .uploadAudioVideoController
+                                                    .startTrim
+                                                    .value = (startHandlePosition /
+                                                        trimAreaWidth) *
+                                                    widget
+                                                        .uploadAudioVideoController
+                                                        .videoDuration
+                                                        .value;
+                                              });
+                                            },
+                                            child: Container(
+                                              width: handleWidth,
+                                              height: Get.height * 0.06,
+                                              color:
+                                                  Colors.white.withOpacity(0.5),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
 
-                                  //volume icon in the center
+                                        // End Handle
+                                        Positioned(
+                                          left: endHandlePosition,
+                                          child: GestureDetector(
+                                            onHorizontalDragUpdate: (details) {
+                                              setState(() {
+                                                endHandlePosition +=
+                                                    details.delta.dx;
+                                                if (endHandlePosition >
+                                                    trimAreaWidth) {
+                                                  endHandlePosition =
+                                                      trimAreaWidth;
+                                                }
+                                                if (endHandlePosition <
+                                                    startHandlePosition +
+                                                        handleWidth) {
+                                                  endHandlePosition =
+                                                      startHandlePosition +
+                                                          handleWidth;
+                                                }
 
-                                  // Start Handle
-                                  Positioned(
-                                    left: startHandlePosition,
-                                    child: GestureDetector(
-                                      onHorizontalDragUpdate: (details) {
-                                        setState(() {
-                                          startHandlePosition +=
-                                              details.delta.dx;
-                                          if (startHandlePosition < 0) {
-                                            startHandlePosition = 0;
-                                          }
-                                          if (startHandlePosition >
-                                              endHandlePosition - handleWidth) {
-                                            startHandlePosition =
-                                                endHandlePosition - handleWidth;
-                                          }
-
-                                          // Update start trim value in  widget.uploadAudioVideoController
-                                          widget
-                                              .uploadAudioVideoController
-                                              .startTrim
-                                              .value = (startHandlePosition /
-                                                  trimAreaWidth) *
-                                              widget.uploadAudioVideoController
-                                                  .videoDuration.value;
-                                        });
-                                      },
-                                      child: Container(
-                                        width: handleWidth,
-                                        height: 60,
-                                        color: Colors.white.withOpacity(0.5),
-                                      ),
+                                                // Update end trim value in  widget.uploadAudioVideoController
+                                                widget
+                                                    .uploadAudioVideoController
+                                                    .endTrim
+                                                    .value = (endHandlePosition /
+                                                        trimAreaWidth) *
+                                                    widget
+                                                        .uploadAudioVideoController
+                                                        .videoDuration
+                                                        .value;
+                                              });
+                                            },
+                                            child: Container(
+                                              width: handleWidth,
+                                              height: 60,
+                                              color:
+                                                  Colors.red.withOpacity(0.5),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-
-                                  // End Handle
-                                  Positioned(
-                                    left: endHandlePosition,
-                                    child: GestureDetector(
-                                      onHorizontalDragUpdate: (details) {
-                                        setState(() {
-                                          endHandlePosition += details.delta.dx;
-                                          if (endHandlePosition >
-                                              trimAreaWidth) {
-                                            endHandlePosition = trimAreaWidth;
-                                          }
-                                          if (endHandlePosition <
-                                              startHandlePosition +
-                                                  handleWidth) {
-                                            endHandlePosition =
-                                                startHandlePosition +
-                                                    handleWidth;
-                                          }
-
-                                          // Update end trim value in  widget.uploadAudioVideoController
-                                          widget
-                                              .uploadAudioVideoController
-                                              .endTrim
-                                              .value = (endHandlePosition /
-                                                  trimAreaWidth) *
-                                              widget.uploadAudioVideoController
-                                                  .videoDuration.value;
-                                        });
-                                      },
-                                      child: Container(
-                                        width: handleWidth,
-                                        height: 60,
-                                        color: Colors.white.withOpacity(0.5),
-                                      ),
-                                    ),
-                                  ),
-
-                                  // Shade the unselected areas
-                                  Positioned(
-                                    left: 0,
-                                    child: Container(
-                                      width: startHandlePosition,
-                                      height: 60,
-                                      color: Colors.black.withOpacity(0.5),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: endHandlePosition + handleWidth,
-                                    child: Container(
-                                      width: trimAreaWidth -
-                                          endHandlePosition -
-                                          handleWidth,
-                                      height: 60,
-                                      color: Colors.black.withOpacity(0.5),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      );
-                    },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Center(
@@ -414,6 +457,7 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
               ],
             ),
             // Trim Button
+
             SizedBox(height: Get.height * 0.01),
             ElevatedButton(
               onPressed: () {
