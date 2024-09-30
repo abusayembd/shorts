@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
@@ -17,6 +18,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 
 import '../views/widgets/add_sound_bottom_sheet.dart';
+
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 class UploadAudioVideoController extends GetxController {
   final TextEditingController songNameController = TextEditingController();
@@ -48,6 +51,17 @@ class UploadAudioVideoController extends GetxController {
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
   final Random _rnd = Random();
 
+  // Variables for trimming
+  RxDouble startTrim = 0.0.obs;
+  RxDouble endTrim = 0.0.obs;
+  RxDouble videoDuration = 0.0.obs;
+
+  // Store thumbnails
+  RxList<Uint8List> thumbnails = <Uint8List>[].obs;
+
+  // Video file path
+  late String videoPath;
+
   @override
   void dispose() {
     videoController.dispose();
@@ -73,11 +87,37 @@ class UploadAudioVideoController extends GetxController {
     });
   }
 
+  //for trimming
+  void generateThumbnails() async {
+    thumbnails.clear();
+    int numberOfThumbnails = 10; // Adjust as needed
+    double eachPart = videoDuration.value / numberOfThumbnails;
+
+    for (int i = 0; i < numberOfThumbnails; i++) {
+      Uint8List? bytes = await VideoThumbnail.thumbnailData(
+        video: videoPath,
+        imageFormat: ImageFormat.JPEG,
+        timeMs: (eachPart * i).toInt(),
+        quality: 75,
+      );
+      if (bytes != null) {
+        thumbnails.add(bytes);
+      }
+    }
+  }
+
   void initializeVideo(File videoFile) {
+    videoPath = videoFile.path;
     videoController = VideoPlayerController.file(videoFile,
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true))
       ..initialize().then((_) {
         isVideoInitialized.value = true;
+        //for trimming
+        videoDuration.value =
+            videoController.value.duration.inSeconds.toDouble();
+        endTrim.value = videoDuration.value;
+        generateThumbnails();
+        //for trimming
         videoController.play();
         videoController.setVolume(videoVolume.value);
         videoController.setLooping(true);
@@ -95,6 +135,30 @@ class UploadAudioVideoController extends GetxController {
       videoController.pause();
     }
   }
+
+  ///-------------------- method end for trimming---------------------------///
+  ///
+  Future<void> trimVideo() async {
+    final directory = await getTemporaryDirectory();
+    String outputPath = '${directory.path}/${getRandomString(15)}_trimmed.mp4';
+
+    String ffmpegCommand =
+        '-i $videoPath -ss ${startTrim.value / 1000} -to ${endTrim.value / 1000} -c copy $outputPath';
+
+    final session = await FFmpegKit.execute(ffmpegCommand);
+    final returnCode = await session.getReturnCode();
+
+    if (ReturnCode.isSuccess(returnCode)) {
+      debugPrint('Video trimmed successfully!');
+      // Optionally, reinitialize the video controller with the trimmed video
+      initializeVideo(File(outputPath));
+    } else {
+      final logs = await session.getAllLogsAsString();
+      debugPrint('FFmpeg failed with return code: $logs');
+    }
+  }
+
+  ///-------------------- method end for trimming---------------------------///
 
   ///******** Method for opening bottom sheet of audio selection  *********///
   void selectAudioBottomSheet() async {
@@ -287,8 +351,10 @@ class UploadAudioVideoController extends GetxController {
 
       var allDocs = await firestore.collection('videos').get();
       int len = allDocs.docs.length;
-      String videoUrl = await _uploadVideoToStorage("Video ${len++}", videoPath);
-      String thumbnail = await _uploadImageToStorage("Video ${len++}", videoPath);
+      String videoUrl =
+          await _uploadVideoToStorage("Video ${len++}", videoPath);
+      String thumbnail =
+          await _uploadImageToStorage("Video ${len++}", videoPath);
 
       Video video = Video(
         username: (userDoc.data()! as Map<String, dynamic>)['name'],
@@ -343,8 +409,6 @@ class UploadAudioVideoController extends GetxController {
     }
   }
 
-
-
   // upload thumbnail
   Future<String> _uploadImageToStorage(String id, String videoPath) async {
     try {
@@ -359,12 +423,11 @@ class UploadAudioVideoController extends GetxController {
       return '';
     }
   }
+
   _getThumbnail(String videoPath) async {
     final thumbnail = await VideoCompress.getFileThumbnail(videoPath);
     return thumbnail;
   }
-
-
 
   String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
       length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
