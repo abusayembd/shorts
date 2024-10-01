@@ -327,8 +327,6 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                               .uploadAudioVideoController
                                                               .selectedAudio
                                                               .value,
-
-                                                      //todo render-flex
                                                       style: TextStyle(
                                                         color: Colors.white,
                                                         fontSize:
@@ -364,20 +362,20 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                         .length *
                                                     Get.width *
                                                     0.2;
-                                                double maxPosition = widget
-                                                        .uploadAudioVideoController
-                                                        .endHandlePosition
-                                                        .value -
-                                                    widget
-                                                        .uploadAudioVideoController
-                                                        .handleWidth
-                                                        .value;
+                                                // double maxPosition = widget
+                                                //         .uploadAudioVideoController
+                                                //         .endHandlePosition
+                                                //         .value -
+                                                //     widget
+                                                //         .uploadAudioVideoController
+                                                //         .handleWidth
+                                                //         .value;
 
                                                 if (newPosition < 0) {
                                                   newPosition = 0;
-                                                } else if (newPosition >
-                                                    maxPosition) {
-                                                  newPosition = maxPosition;
+                                                } else if (newPosition >=
+                                                    thumbnailWidth) {
+                                                  newPosition = thumbnailWidth;
                                                 }
 
                                                 widget
@@ -389,12 +387,12 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                 widget
                                                     .uploadAudioVideoController
                                                     .startTrim
-                                                    .value = (newPosition /
-                                                        thumbnailWidth) *
+                                                    .value = ((newPosition /
+                                                    thumbnailWidth) *
                                                     widget
                                                         .uploadAudioVideoController
                                                         .videoDuration
-                                                        .value;
+                                                        .value).roundToDouble();
 
                                                 debugPrint(
                                                     "Start Trim: ${widget.uploadAudioVideoController.startTrim.value}");
@@ -435,11 +433,7 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                 double minPosition = widget
                                                         .uploadAudioVideoController
                                                         .startHandlePosition
-                                                        .value +
-                                                    widget
-                                                        .uploadAudioVideoController
-                                                        .handleWidth
-                                                        .value;
+                                                        .value ;
 
                                                 if (newPosition < minPosition) {
                                                   newPosition = minPosition;
@@ -465,12 +459,12 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                 widget
                                                     .uploadAudioVideoController
                                                     .endTrim
-                                                    .value = (newPosition /
-                                                        thumbnailWidth) *
+                                                    .value = ((newPosition /
+                                                    thumbnailWidth) *
                                                     widget
                                                         .uploadAudioVideoController
                                                         .videoDuration
-                                                        .value;
+                                                        .value).roundToDouble();
 
                                                 debugPrint(
                                                     "End Trim: ${widget.uploadAudioVideoController.endTrim.value}");
