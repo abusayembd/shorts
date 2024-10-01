@@ -52,9 +52,15 @@ class UploadAudioVideoController extends GetxController {
   final Random _rnd = Random();
 
   // Variables for trimming
+  RxDouble startHandlePosition = 0.0.obs;
+  RxDouble endHandlePosition = 0.0.obs;
+  RxDouble handleWidth = 8.0.obs; // Width of the draggable handle
+  RxDouble trimAreaWidth = 0.0.obs;
+  RxBool isMuted = false.obs;
+  RxDouble videoDuration = 0.0.obs;
   RxDouble startTrim = 0.0.obs;
   RxDouble endTrim = 0.0.obs;
-  RxDouble videoDuration = 0.0.obs;
+  bool thumbnailLoading = false;
 
   // Store thumbnails
   RxList<Uint8List> thumbnails = <Uint8List>[].obs;
@@ -87,23 +93,45 @@ class UploadAudioVideoController extends GetxController {
     });
   }
 
-  //for trimming
   void generateThumbnails() async {
+    // Clear existing thumbnails
     thumbnails.clear();
-    int numberOfThumbnails =  videoController.value.duration.inSeconds.toInt(); // Adjust as needed
+
+    // Calculate the number of thumbnails and each part duration
+    int numberOfThumbnails =
+        videoController.value.duration.inSeconds; // Adjust as needed
     double eachPart = videoDuration.value / numberOfThumbnails;
 
+    // Cache of the last successful thumbnail
+    Uint8List? lastBytes;
+
     for (int i = 0; i < numberOfThumbnails; i++) {
-      Uint8List? bytes = await VideoThumbnail.thumbnailData(
-        video: videoPath,
-        imageFormat: ImageFormat.JPEG,
-        timeMs: (eachPart * i).toInt(),
-        quality: 75,
-      );
+      Uint8List? bytes;
+
+      try {
+        // Generate thumbnail data for the specified time
+        bytes = await VideoThumbnail.thumbnailData(
+          video: videoPath,
+          imageFormat: ImageFormat.JPEG,
+          timeMs: (eachPart * i).toInt(),
+          quality: 75,
+        );
+      } catch (e) {
+        debugPrint(
+            'ERROR: Couldn\'t generate thumbnail for time ${(eachPart * i).toInt()}: $e');
+      }
+
+      // Use the last successful thumbnail if current is null
       if (bytes != null) {
-        thumbnails.add(bytes);
+        lastBytes = bytes;
+        thumbnails.add(bytes); // Add successful thumbnail to the list
+      } else {
+        thumbnails.add(lastBytes!); // Fallback to the last successful thumbnail
       }
     }
+
+    // Notify that thumbnail generation is complete
+    onThumbnailLoadingComplete();
   }
 
   void initializeVideo(File videoFile) {
@@ -112,12 +140,21 @@ class UploadAudioVideoController extends GetxController {
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true))
       ..initialize().then((_) {
         isVideoInitialized.value = true;
-        //for trimming
+        // Set video duration for trimming
         videoDuration.value =
             videoController.value.duration.inSeconds.toDouble();
-        endTrim.value = videoDuration.value;
-        generateThumbnails();
-        //for trimming
+
+        // Set start and end trim positions
+        startTrim.value = 0.0; // Start of the video
+        startHandlePosition.value = 0.0; // Handle starts at the beginning
+
+        endTrim.value = videoDuration.value; // End of the video
+        endHandlePosition.value =
+            videoDuration.value; // Handle is placed at the end
+        debugPrint("AAA ${endHandlePosition.value}");
+        generateThumbnails(); // Generate thumbnails based on the video duration
+
+        // Play video and set volume and looping
         videoController.play();
         videoController.setVolume(videoVolume.value);
         videoController.setLooping(true);
@@ -520,5 +557,21 @@ class UploadAudioVideoController extends GetxController {
         );
       },
     );
+  }
+
+  void onThumbnailLoadingComplete() {
+    // Set the initial position for the start and end handles
+    startHandlePosition.value = 0;
+
+    // Ensure the end handle starts at the end of the thumbnails container
+    // endHandlePosition.value =
+    //     thumbnails.length * Get.width * 0.2; // Assuming each thumbnail has a width of Get.width * 0.2
+
+    // Log positions for debugging
+    debugPrint("Device Width ${Get.width}, Thumbnail Width ${Get.width * 0.2}");
+    debugPrint('Start Handle Initialized at: ${startHandlePosition.value}');
+    debugPrint('End Handle Initialized at: ${endHandlePosition.value}');
+
+    // Perform any other updates or UI refresh logic if needed
   }
 }
