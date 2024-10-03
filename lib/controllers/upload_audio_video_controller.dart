@@ -1,25 +1,28 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shorts/constants.dart';
 import 'package:shorts/models/video.dart';
 import 'package:video_compress/video_compress.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 
+import '../utils/frame_generate_isolate_ffmpeg.dart';
+import '../utils/frame_generator_isolate_from_repaint_boundary.dart';
 import '../views/widgets/add_sound_bottom_sheet.dart';
 
-import 'package:video_thumbnail/video_thumbnail.dart';
+// import 'package:video_thumbnail/video_thumbnail.dart';
 
 class UploadAudioVideoController extends GetxController {
   final TextEditingController songNameController = TextEditingController();
@@ -54,7 +57,6 @@ class UploadAudioVideoController extends GetxController {
   // Variables for trimming
   RxDouble startHandlePosition = 0.0.obs;
   RxDouble endHandlePosition = 0.0.obs;
-  RxDouble handleWidth = 8.0.obs; // Width of the draggable handle
   RxDouble trimAreaWidth = 0.0.obs;
   RxBool isMuted = false.obs;
   RxDouble videoDuration = 0.0.obs;
@@ -62,18 +64,12 @@ class UploadAudioVideoController extends GetxController {
   RxDouble endTrim = 0.0.obs;
   bool thumbnailLoading = false;
 
-  // Store thumbnails
-  RxList<Uint8List> thumbnails = <Uint8List>[].obs;
+  // Store frames
+  RxList<Uint8List> videoFrames = <Uint8List>[].obs;
+  RxInt timeInSeconds = 0.obs;
 
   // Video file path
   late String videoPath;
-
-  @override
-  void dispose() {
-    videoController.dispose();
-    player.dispose();
-    super.dispose();
-  }
 
   @override
   void onClose() {
@@ -93,46 +89,43 @@ class UploadAudioVideoController extends GetxController {
     });
   }
 
-  void generateThumbnails() async {
-    // Clear existing thumbnails
-    thumbnails.clear();
-
-    // Calculate the number of thumbnails and each part duration
-    int numberOfThumbnails =
-        videoController.value.duration.inSeconds; // Adjust as needed
-    double eachPart = videoDuration.value / numberOfThumbnails;
-
-    // Cache of the last successful thumbnail
-    Uint8List? lastBytes;
-
-    for (int i = 0; i < numberOfThumbnails; i++) {
-      Uint8List? bytes;
-
-      try {
-        // Generate thumbnail data for the specified time
-        bytes = await VideoThumbnail.thumbnailData(
-          video: videoPath,
-          imageFormat: ImageFormat.JPEG,
-          timeMs: (eachPart * i).toInt(),
-          quality: 75,
-        );
-      } catch (e) {
-        debugPrint(
-            'ERROR: Couldn\'t generate thumbnail for time ${(eachPart * i).toInt()}: $e');
-      }
-
-      // Use the last successful thumbnail if current is null
-      if (bytes != null) {
-        lastBytes = bytes;
-        thumbnails.add(bytes); // Add successful thumbnail to the list
-      } else {
-        thumbnails.add(lastBytes!); // Fallback to the last successful thumbnail
-      }
-    }
-
-    // Notify that thumbnail generation is complete
-    onThumbnailLoadingComplete();
-  }
+  // void generateThumbnails() async {
+  //   // Clear existing thumbnails
+  //   thumbnails.clear();
+  //
+  //   // Calculate the number of thumbnails and each part duration
+  //   int numberOfThumbnails =
+  //       videoController.value.duration.inSeconds; // Adjust as needed
+  //   double eachPart = videoDuration.value / numberOfThumbnails;
+  //
+  //   // Cache of the last successful thumbnail
+  //   Uint8List? lastBytes;
+  //
+  //   for (int i = 0; i < numberOfThumbnails; i++) {
+  //     Uint8List? bytes;
+  //
+  //     try {
+  //       // Generate thumbnail data for the specified time
+  //       bytes = await VideoThumbnail.thumbnailData(
+  //         video: videoPath,
+  //         imageFormat: ImageFormat.JPEG,
+  //         timeMs: (eachPart * i).toInt(),
+  //         quality: 75,
+  //       );
+  //     } catch (e) {
+  //       debugPrint(
+  //           'ERROR: Could not generate thumbnail for time ${(eachPart * i).toInt()}: $e');
+  //     }
+  //
+  //     // Use the last successful thumbnail if current is null
+  //     if (bytes != null) {
+  //       lastBytes = bytes;
+  //       thumbnails.add(bytes); // Add successful thumbnail to the list
+  //     } else {
+  //       thumbnails.add(lastBytes!); // Fallback to the last successful thumbnail
+  //     }
+  //   }
+  // }
 
   void initializeVideo(File videoFile) {
     videoPath = videoFile.path;
@@ -143,23 +136,108 @@ class UploadAudioVideoController extends GetxController {
         // Set video duration for trimming
         videoDuration.value =
             videoController.value.duration.inSeconds.toDouble();
-
-        // Set start and end trim positions
-        startTrim.value = 0.0; // Start of the video
-        startHandlePosition.value = 0.0; // Handle starts at the beginning
-
-        endTrim.value = videoDuration.value; // End of the video
-        endHandlePosition.value =
-            videoDuration.value; // Handle is placed at the end
-        debugPrint("AAA ${endHandlePosition.value}");
-        generateThumbnails(); // Generate thumbnails based on the video duration
-
-        // Play video and set volume and looping
+        generateFramesInController(videoFile);
+        // generateFramesInIsolate();
         videoController.play();
         videoController.setVolume(videoVolume.value);
         videoController.setLooping(true);
+        // Generate frames based on the video duration in an isolate
+
+      }).catchError((error) {
+        Get.snackbar(
+          'Error',
+          'Failed to load video: $error',
+          snackPosition: SnackPosition.BOTTOM,
+        );
       });
   }
+
+  void generateFramesInController(File videoFile) async {
+    try {
+      // Get the temp directory to save frames temporarily
+      final Directory tempDir = await getTemporaryDirectory();
+      final String tempPath = tempDir.path;
+
+      // Command to extract frames, save them as .png in temp directory
+      final String command = '-i "${videoFile.path}" -vf fps=1 -pix_fmt rgb24 "$tempPath/output%d.png"';
+
+      // Execute FFmpeg command
+      final result = await FFmpegKit.execute(command);
+      debugPrint("Snigdho: ${await result.getOutput()}");
+
+      // Check if FFmpeg command was successful
+      if (await result.getReturnCode() == 0) {
+        debugPrint("Frames extracted successfully.");
+
+        // Loop through generated frames and add them to RxList as Uint8List
+        int frameIndex = 2;
+        while (true) {
+          final framePath = '$tempPath/output$frameIndex.png';
+          final frameFile = File(framePath);
+
+          // Break loop if frame does not exist (no more frames to process)
+          if (!frameFile.existsSync()) break;
+
+          // Read frame as bytes and add it to the RxList
+          final frameBytes = await frameFile.readAsBytes();
+          videoFrames.add(frameBytes);
+
+          frameIndex++;
+        }
+      } else {
+        debugPrint("Error in FFmpeg command execution: ${await result.getOutput()}");
+      }
+    } catch (e) {
+      debugPrint("Error: $e");
+    }
+  }
+
+
+
+
+
+
+
+  // //working code reoauntboundary
+  // void generateFramesInIsolate() async {
+  //   if (videoController.value.isInitialized) {
+  //     int numberOfFrames = videoController.value.duration.inSeconds;
+  //     double videoDuration =
+  //         videoController.value.duration.inSeconds.toDouble();
+  //
+  //     FrameGeneratorIsolate frameGenerator = FrameGeneratorIsolate(
+  //       videoKey: videoKey,
+  //       videoController: videoController,
+  //     );
+  //
+  //     videoFrames.assignAll(
+  //         await frameGenerator.generateFrames(numberOfFrames, videoDuration));
+  //   } else {
+  //     debugPrint('ERROR: Video player is not initialized');
+  //   }
+  // }//working code reoauntboundary
+
+  // void generateFramesInIsolate() async {
+  //   if (videoPath.isNotEmpty) {
+  //     int numberOfFrames = videoController.value.duration.inSeconds; // Adjust the number of frames as needed
+  //
+  //     // Create an instance of FrameGenerator
+  //     FrameGeneratorIsolate frameGenerator = FrameGeneratorIsolate(videoPath: videoPath);
+  //
+  //     try {
+  //       // Generate frames using the FrameGenerator
+  //       videoFrames.assignAll(await frameGenerator.generateFrames(numberOfFrames));
+  //
+  //       // Optionally, you can set the video duration here if needed
+  //       // videoDuration.value = videoController.value.duration.inSeconds.toDouble();
+  //
+  //     } catch (e) {
+  //       debugPrint('ERROR: Frame generation failed: $e');
+  //     }
+  //   } else {
+  //     debugPrint('ERROR: Video path is not set or video is not initialized');
+  //   }
+  // }
 
   void playVideo() {
     if (!videoController.value.isPlaying) {
@@ -172,6 +250,56 @@ class UploadAudioVideoController extends GetxController {
       videoController.pause();
     }
   }
+
+  GlobalKey videoKey = GlobalKey();
+
+  // void generateFrames() async {
+  //   // Ensure the video player is initialized and ready to play
+  //   if (videoController.value.isInitialized) {
+  //     // Clear existing frames
+  //     thumbnails.clear();
+  //
+  //     // Calculate the number of frames and each part duration
+  //     int numberOfFrames =
+  //         videoController.value.duration.inSeconds; // Adjust as needed
+  //     double eachPart = videoDuration.value / numberOfFrames;
+  //
+  //     for (int i = 0; i < numberOfFrames; i++) {
+  //       // Seek to the specific frame time
+  //       await videoController
+  //           .seekTo(Duration(milliseconds: (eachPart * i * 1000).toInt()));
+  //
+  //       // Wait for the video to update the frame
+  //       // await videoController.pause();
+  //       // await Future.delayed(const Duration(milliseconds: 100)); // Slight delay to ensure frame is updated
+  //       videoController.play();
+  //       // Capture the current frame from the video player
+  //       RenderObject? renderObject =
+  //           videoKey.currentContext?.findRenderObject();
+  //       if (renderObject is RenderRepaintBoundary) {
+  //         RenderRepaintBoundary boundary = renderObject;
+  //         ui.Image image = await boundary.toImage(
+  //             pixelRatio: 2.0); // Adjust pixel ratio if needed
+  //         ByteData? byteData =
+  //             await image.toByteData(format: ui.ImageByteFormat.png);
+  //         Uint8List? bytes = byteData?.buffer.asUint8List();
+  //
+  //         if (bytes != null) {
+  //           thumbnails.add(bytes); // Add frame to the list
+  //         } else {
+  //           debugPrint(
+  //               'ERROR: Could not capture frame for time ${(eachPart * i).toInt()}');
+  //         }
+  //       } else {
+  //         debugPrint('ERROR: RenderObject is not a RenderRepaintBoundary');
+  //       }
+  //     }
+  //     // // Resume the video if needed after frame capture
+  //     // videoController.play();
+  //   } else {
+  //     debugPrint('ERROR: Video player is not initialized');
+  //   }
+  // }
 
   ///-------------------- method end for trimming---------------------------///
   ///
@@ -557,21 +685,5 @@ class UploadAudioVideoController extends GetxController {
         );
       },
     );
-  }
-
-  void onThumbnailLoadingComplete() {
-    // Set the initial position for the start and end handles
-    startHandlePosition.value = 0;
-
-    // Ensure the end handle starts at the end of the thumbnails container
-    // endHandlePosition.value =
-    //     thumbnails.length * Get.width * 0.2; // Assuming each thumbnail has a width of Get.width * 0.2
-
-    // Log positions for debugging
-    debugPrint("Device Width ${Get.width}, Thumbnail Width ${Get.width * 0.2}");
-    debugPrint('Start Handle Initialized at: ${startHandlePosition.value}');
-    debugPrint('End Handle Initialized at: ${endHandlePosition.value}');
-
-    // Perform any other updates or UI refresh logic if needed
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,6 +10,7 @@ import 'edit_video_full_screen_preview_widget.dart';
 
 class EditVideoWidget extends StatefulWidget {
   final UploadAudioVideoController uploadAudioVideoController;
+
 
   const EditVideoWidget({
     super.key,
@@ -21,32 +23,6 @@ class EditVideoWidget extends StatefulWidget {
 
 @override
 class _EditVideoWidgetState extends State<EditVideoWidget> {
-  @override
-  void initState() {
-    super.initState();
-
-    setState(() {
-      widget.uploadAudioVideoController.endHandlePosition.value =
-          widget.uploadAudioVideoController.videoDuration.value;
-      debugPrint(
-          "Sayem End Handle Position: ${widget.uploadAudioVideoController.endHandlePosition.value}");
-      debugPrint(
-          "Sayem Video Duration: ${widget.uploadAudioVideoController.videoDuration.value}");
-      debugPrint(
-          "Sayem Trim Area Width: ${widget.uploadAudioVideoController.trimAreaWidth.value}");
-      debugPrint(
-          "Sayem Handle Width: ${widget.uploadAudioVideoController.handleWidth.value}");
-      debugPrint(
-          "Sayem Start Handle Position: ${widget.uploadAudioVideoController.startHandlePosition.value}");
-      debugPrint(
-          "Sayem End Handle Position: ${widget.uploadAudioVideoController.endHandlePosition.value}");
-      debugPrint(
-          "Sayem Start Trim: ${widget.uploadAudioVideoController.startTrim.value}");
-      debugPrint(
-          "Sayem End Trim: ${widget.uploadAudioVideoController.endTrim.value}");
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -192,7 +168,7 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                         Column(
                           children: [
                             Obx(
-                              () => widget.uploadAudioVideoController.thumbnails
+                              () => widget.uploadAudioVideoController.videoFrames
                                       .isEmpty
                                   ? const Center(
                                       child: CircularProgressIndicator(),
@@ -205,29 +181,24 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                             MainAxisAlignment.spaceBetween,
                                         children: List.generate(
                                           widget.uploadAudioVideoController
-                                                  .thumbnails.length +
+                                                  .videoFrames.length +
                                               1,
                                           (index) {
-                                            int totalThumbnails = widget
-                                                .uploadAudioVideoController
-                                                .thumbnails
-                                                .length;
-                                            double videoDurationInSeconds =
-                                                widget
-                                                    .uploadAudioVideoController
-                                                    .videoDuration
-                                                    .value;
-                                            double secondsPerThumbnail =
-                                                videoDurationInSeconds /
-                                                    totalThumbnails;
-
-                                            int timeInSeconds = (index *
-                                                    secondsPerThumbnail)
+                                            widget.uploadAudioVideoController
+                                                .timeInSeconds.value = (index *
+                                                    (widget
+                                                            .uploadAudioVideoController
+                                                            .videoDuration
+                                                            .value /
+                                                        widget
+                                                            .uploadAudioVideoController
+                                                            .videoFrames
+                                                            .length))
                                                 .round(); // Calculate the time for each thumbnail
                                             return SizedBox(
                                               width: Get.width * 0.19,
                                               child: Text(
-                                                "${(timeInSeconds ~/ 60).toString().padLeft(2, '0')}:${(timeInSeconds % 60).toString().padLeft(2, '0')}",
+                                                "${(widget.uploadAudioVideoController.timeInSeconds.value ~/ 60).toString().padLeft(2, '0')}:${(widget.uploadAudioVideoController.timeInSeconds.value % 60).toString().padLeft(2, '0')}",
                                                 style: const TextStyle(
                                                   fontSize: 10,
                                                   color: Colors.red,
@@ -243,7 +214,7 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                             ///
                             /// Thumbnail List
                             Obx(
-                              () => widget.uploadAudioVideoController.thumbnails
+                              () => widget.uploadAudioVideoController.videoFrames
                                       .isEmpty
                                   ? const Center(
                                       child: CircularProgressIndicator())
@@ -261,7 +232,7 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                 child: SizedBox(
                                                   width: widget
                                                           .uploadAudioVideoController
-                                                          .thumbnails
+                                                          .videoFrames
                                                           .length *
                                                       Get.width *
                                                       0.2,
@@ -270,13 +241,13 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                     children: List.generate(
                                                       widget
                                                           .uploadAudioVideoController
-                                                          .thumbnails
+                                                          .videoFrames
                                                           .length,
                                                       (index) {
                                                         return Image.memory(
                                                           widget
                                                               .uploadAudioVideoController
-                                                              .thumbnails[index],
+                                                              .videoFrames[index],
                                                           width:
                                                               Get.width * 0.2,
                                                           fit: BoxFit.cover,
@@ -298,7 +269,7 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                                 height: Get.height * 0.04,
                                                 width: widget
                                                         .uploadAudioVideoController
-                                                        .thumbnails
+                                                        .videoFrames
                                                         .length *
                                                     Get.width *
                                                     0.2,
@@ -340,6 +311,7 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                           ],
                                         ),
 
+
                                         //volume icon in the center
 
                                         //Start Handle
@@ -351,60 +323,56 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                           child: GestureDetector(
                                             onHorizontalDragUpdate: (details) {
                                               setState(() {
-                                                double newPosition = widget
+                                                double newStartHandlePosition =
+                                                    widget
+                                                            .uploadAudioVideoController
+                                                            .startHandlePosition
+                                                            .value +
+                                                        details.delta.dx;
+                                                debugPrint(
+                                                    "left handler delta:${details.delta.dx}");
+                                                debugPrint(
+                                                    "Sayem New Start Handle Position: $newStartHandlePosition");
+                                                double frameWidth = widget
                                                         .uploadAudioVideoController
-                                                        .startHandlePosition
-                                                        .value +
-                                                    details.delta.dx;
-                                                double thumbnailWidth = widget
-                                                        .uploadAudioVideoController
-                                                        .thumbnails
+                                                        .videoFrames
                                                         .length *
                                                     Get.width *
                                                     0.2;
-                                                // double maxPosition = widget
-                                                //         .uploadAudioVideoController
-                                                //         .endHandlePosition
-                                                //         .value -
-                                                //     widget
-                                                //         .uploadAudioVideoController
-                                                //         .handleWidth
-                                                //         .value;
 
-                                                if (newPosition < 0) {
-                                                  newPosition = 0;
-                                                } else if (newPosition >=
-                                                    thumbnailWidth) {
-                                                  newPosition = thumbnailWidth;
+                                                if (newStartHandlePosition <=
+                                                    0) {
+                                                  newStartHandlePosition = 0;
+                                                } else if (newStartHandlePosition >
+                                                    frameWidth) {
+                                                  newStartHandlePosition =
+                                                      frameWidth;
                                                 }
 
                                                 widget
-                                                    .uploadAudioVideoController
-                                                    .startHandlePosition
-                                                    .value = newPosition;
+                                                        .uploadAudioVideoController
+                                                        .startHandlePosition
+                                                        .value =
+                                                    newStartHandlePosition;
 
                                                 // Update startTrim based on the handle position
-                                                widget
-                                                    .uploadAudioVideoController
-                                                    .startTrim
-                                                    .value = ((newPosition /
-                                                    thumbnailWidth) *
-                                                    widget
-                                                        .uploadAudioVideoController
-                                                        .videoDuration
-                                                        .value).roundToDouble();
+                                                widget.uploadAudioVideoController
+                                                        .startTrim.value =
+                                                    ((newStartHandlePosition /
+                                                                frameWidth) *
+                                                            widget
+                                                                .uploadAudioVideoController
+                                                                .videoDuration
+                                                                .value)
+                                                        .toPrecision(2);
 
                                                 debugPrint(
                                                     "Start Trim: ${widget.uploadAudioVideoController.startTrim.value}");
                                               });
                                             },
                                             child: Container(
-                                              width: widget
-                                                      .uploadAudioVideoController
-                                                      .handleWidth
-                                                      .value *
-                                                  2,
-                                              height: Get.height * 0.5,
+                                              width: Get.width * 0.025,
+                                              height: Get.height * 0.06,
                                               color:
                                                   Colors.white.withOpacity(0.5),
                                             ),
@@ -419,64 +387,74 @@ class _EditVideoWidgetState extends State<EditVideoWidget> {
                                           child: GestureDetector(
                                             onHorizontalDragUpdate: (details) {
                                               setState(() {
-                                                double newPosition = widget
+                                                double newEndHandlePosition = widget
                                                         .uploadAudioVideoController
                                                         .endHandlePosition
                                                         .value -
                                                     details.delta.dx;
-                                                double thumbnailWidth = widget
+                                                debugPrint(
+                                                    "Right handler delta:${details.delta.dx}");
+                                                debugPrint(
+                                                    "After subtract handler's value: $newEndHandlePosition");
+
+                                                double frameWidth = widget
                                                         .uploadAudioVideoController
-                                                        .thumbnails
+                                                        .videoFrames
                                                         .length *
                                                     Get.width *
                                                     0.2;
+                                                debugPrint(
+                                                    "frame Width: $frameWidth");
                                                 double minPosition = widget
-                                                        .uploadAudioVideoController
-                                                        .startHandlePosition
-                                                        .value ;
+                                                    .uploadAudioVideoController
+                                                    .startHandlePosition
+                                                    .value;
+                                                debugPrint(
+                                                    "Min Position: $minPosition");
 
-                                                if (newPosition < minPosition) {
-                                                  newPosition = minPosition;
-                                                } else if (newPosition >
-                                                    thumbnailWidth -
-                                                        widget
-                                                            .uploadAudioVideoController
-                                                            .handleWidth
-                                                            .value) {
-                                                  newPosition = thumbnailWidth -
-                                                      widget
-                                                          .uploadAudioVideoController
-                                                          .handleWidth
-                                                          .value;
+                                                // Prevent end handle from crossing the start handle or going beyond the right side
+                                                if (newEndHandlePosition <=
+                                                    minPosition) {
+                                                  newEndHandlePosition =
+                                                      minPosition;
+                                                } else if (newEndHandlePosition >=
+                                                    frameWidth) {
+                                                  newEndHandlePosition =
+                                                      frameWidth;
                                                 }
 
                                                 widget
                                                     .uploadAudioVideoController
                                                     .endHandlePosition
-                                                    .value = newPosition;
+                                                    .value = newEndHandlePosition;
+                                                debugPrint(
+                                                    "End Handle Position: ${widget.uploadAudioVideoController.endHandlePosition.value}");
 
-                                                // Update endTrim based on the handle position
+                                                // Calculate endTrim in reverse (from right to left)
                                                 widget
                                                     .uploadAudioVideoController
                                                     .endTrim
-                                                    .value = ((newPosition /
-                                                    thumbnailWidth) *
-                                                    widget
-                                                        .uploadAudioVideoController
-                                                        .videoDuration
-                                                        .value).roundToDouble();
+                                                    .value = (widget
+                                                            .uploadAudioVideoController
+                                                            .videoDuration
+                                                            .value -
+                                                        ((newEndHandlePosition /
+                                                                frameWidth) *
+                                                            widget
+                                                                .uploadAudioVideoController
+                                                                .videoDuration
+                                                                .value))
+                                                    .toPrecision(2);
 
                                                 debugPrint(
                                                     "End Trim: ${widget.uploadAudioVideoController.endTrim.value}");
                                               });
+                                              debugPrint(
+                                                  "${widget.uploadAudioVideoController.endTrim.value.runtimeType}");
                                             },
                                             child: Container(
-                                              width: widget
-                                                      .uploadAudioVideoController
-                                                      .handleWidth
-                                                      .value *
-                                                  2,
-                                              height: Get.height * 0.5,
+                                              width: Get.width * 0.025,
+                                              height: Get.height * 0.06,
                                               color:
                                                   Colors.red.withOpacity(0.5),
                                             ),

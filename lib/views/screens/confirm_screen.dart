@@ -24,20 +24,35 @@ class ConfirmScreen extends StatelessWidget {
     final UploadAudioVideoController uploadAudioVideoController = Get.put(
       UploadAudioVideoController(),
     )..initializeVideo(videoFile);
-    // final VideoEditingController uploadAudioVideoController = Get.put(
-    //   VideoEditingController(),
-    // )..initializeVideo(videoFile);
 
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (bool didPop, FormData? result) {
-        if (!didPop) {
-          Navigator.pop(context, result);
-          Future.microtask(() async {
-            await Get.delete<UploadAudioVideoController>();
-          });
+    return WillPopScope(
+      onWillPop: () async {
+        // Pause and Dispose the video and audio players when back is pressed
+        if (uploadAudioVideoController.videoController.value.isInitialized) {
+          uploadAudioVideoController.videoController.pause();
+          uploadAudioVideoController.videoController.dispose();
         }
+        if (uploadAudioVideoController.player.playing) {
+          uploadAudioVideoController.player.pause();
+          uploadAudioVideoController.player.dispose();
+        }
+        Get.delete<
+            UploadAudioVideoController>(); // Explicitly delete the controller
+        uploadAudioVideoController.dispose();
+        return true; // Allow navigation
       },
+      // PopScope(
+      // canPop: true,
+      // onPopInvokedWithResult: (bool didPop, FormData? result) {
+      //   if (!didPop) {
+      //     uploadAudioVideoController.videoController.pause();
+      //     uploadAudioVideoController.player.pause();
+      //     Navigator.pop(context, result);
+      //     Future.microtask(() async {
+      //       await Get.delete<UploadAudioVideoController>();
+      //     });
+      //   }
+      // },
       child: Scaffold(
         body: Stack(
           children: [
@@ -61,14 +76,21 @@ class ConfirmScreen extends StatelessWidget {
                                 tag: 'videoHero',
                                 child: AspectRatio(
                                   aspectRatio: uploadAudioVideoController
-                                      .videoController.value.aspectRatio,
+                                          .videoController.value.isInitialized
+                                      ? uploadAudioVideoController
+                                          .videoController.value.aspectRatio
+                                      : 16 / 9,
                                   child: ClipRRect(
                                     borderRadius: const BorderRadius.all(
                                       Radius.circular(20),
                                     ),
-                                    child: VideoPlayer(
-                                        uploadAudioVideoController
-                                            .videoController),
+                                    child: RepaintBoundary(
+                                      key: uploadAudioVideoController
+                                          .videoKey, // RepaintBoundary to capture frames
+                                      child: VideoPlayer(
+                                          uploadAudioVideoController
+                                              .videoController),
+                                    ),
                                   ),
                                 ),
                               ),

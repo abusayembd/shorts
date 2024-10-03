@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shorts/constants.dart';
 import 'package:shorts/controllers/auth_controller.dart';
@@ -8,6 +10,7 @@ import 'package:shorts/views/screens/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  BackgroundIsolateBinaryMessenger.ensureInitialized(RootIsolateToken.instance!);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   ).then((value) {
