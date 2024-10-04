@@ -14,6 +14,7 @@ class EditVideoFullScreenPreviewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Dialog(
       insetPadding: const EdgeInsets.all(0),
       elevation: 0,

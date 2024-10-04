@@ -55,13 +55,13 @@ class UploadAudioVideoController extends GetxController {
   // Variables for trimming
   RxDouble startHandlePosition = 0.0.obs;
   RxDouble endHandlePosition = 0.0.obs;
-  RxDouble trimAreaWidth = 0.0.obs;
   RxBool isMuted = false.obs;
   RxDouble videoDuration = 0.0.obs;
   RxDouble startTrim = 0.0.obs;
   RxDouble endTrim = 0.0.obs;
   bool thumbnailLoading = false;
   GlobalKey videoKey = GlobalKey();
+  RxDouble trimmedDuration = 0.0.obs;
 
   // Store frames
   RxList<Uint8List> videoFrames = <Uint8List>[].obs;
@@ -97,7 +97,7 @@ class UploadAudioVideoController extends GetxController {
         // Set video duration for trimming
         videoDuration.value =
             videoController.value.duration.inSeconds.toDouble();
-        // Generate frames based on the video duration in an isolate
+        trimmedDuration.value = videoDuration.value;
         // generateFramesInIsolate();
         videoController.pause();
         extractFrames(videoFile);
