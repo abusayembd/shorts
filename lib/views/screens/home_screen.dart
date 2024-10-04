@@ -1,7 +1,11 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shorts/constants.dart';
 import 'package:shorts/views/widgets/custom_icon.dart';
+
+import 'confirm_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +16,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int pageIdx = 0;
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: CustomIcon(),
+
             label: '',
           ),
           BottomNavigationBarItem(

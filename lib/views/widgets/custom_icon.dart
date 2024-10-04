@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class CustomIcon extends StatelessWidget {
   const CustomIcon({super.key});
@@ -6,8 +7,8 @@ class CustomIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 45,
-      height: 30,
+      width: Get.width * 0.1143,
+      height: Get.height * .0344,
       child: Stack(
         children: [
           Container(

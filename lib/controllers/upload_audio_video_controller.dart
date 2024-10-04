@@ -16,13 +16,11 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shorts/constants.dart';
 import 'package:shorts/models/video.dart';
 import 'package:video_compress/video_compress.dart';
+import 'package:video_frame_extractor/video_frame_extractor.dart';
 import 'package:video_player/video_player.dart';
 
-import '../utils/frame_generate_isolate_ffmpeg.dart';
 import '../utils/frame_generator_isolate_from_repaint_boundary.dart';
 import '../views/widgets/add_sound_bottom_sheet.dart';
-
-// import 'package:video_thumbnail/video_thumbnail.dart';
 
 class UploadAudioVideoController extends GetxController {
   final TextEditingController songNameController = TextEditingController();
@@ -63,6 +61,7 @@ class UploadAudioVideoController extends GetxController {
   RxDouble startTrim = 0.0.obs;
   RxDouble endTrim = 0.0.obs;
   bool thumbnailLoading = false;
+  GlobalKey videoKey = GlobalKey();
 
   // Store frames
   RxList<Uint8List> videoFrames = <Uint8List>[].obs;
@@ -89,44 +88,6 @@ class UploadAudioVideoController extends GetxController {
     });
   }
 
-  // void generateThumbnails() async {
-  //   // Clear existing thumbnails
-  //   thumbnails.clear();
-  //
-  //   // Calculate the number of thumbnails and each part duration
-  //   int numberOfThumbnails =
-  //       videoController.value.duration.inSeconds; // Adjust as needed
-  //   double eachPart = videoDuration.value / numberOfThumbnails;
-  //
-  //   // Cache of the last successful thumbnail
-  //   Uint8List? lastBytes;
-  //
-  //   for (int i = 0; i < numberOfThumbnails; i++) {
-  //     Uint8List? bytes;
-  //
-  //     try {
-  //       // Generate thumbnail data for the specified time
-  //       bytes = await VideoThumbnail.thumbnailData(
-  //         video: videoPath,
-  //         imageFormat: ImageFormat.JPEG,
-  //         timeMs: (eachPart * i).toInt(),
-  //         quality: 75,
-  //       );
-  //     } catch (e) {
-  //       debugPrint(
-  //           'ERROR: Could not generate thumbnail for time ${(eachPart * i).toInt()}: $e');
-  //     }
-  //
-  //     // Use the last successful thumbnail if current is null
-  //     if (bytes != null) {
-  //       lastBytes = bytes;
-  //       thumbnails.add(bytes); // Add successful thumbnail to the list
-  //     } else {
-  //       thumbnails.add(lastBytes!); // Fallback to the last successful thumbnail
-  //     }
-  //   }
-  // }
-
   void initializeVideo(File videoFile) {
     videoPath = videoFile.path;
     videoController = VideoPlayerController.file(videoFile,
@@ -136,13 +97,13 @@ class UploadAudioVideoController extends GetxController {
         // Set video duration for trimming
         videoDuration.value =
             videoController.value.duration.inSeconds.toDouble();
-        generateFramesInController(videoFile);
+        // Generate frames based on the video duration in an isolate
         // generateFramesInIsolate();
+        videoController.pause();
+        extractFrames(videoFile);
         videoController.play();
         videoController.setVolume(videoVolume.value);
         videoController.setLooping(true);
-        // Generate frames based on the video duration in an isolate
-
       }).catchError((error) {
         Get.snackbar(
           'Error',
@@ -151,93 +112,59 @@ class UploadAudioVideoController extends GetxController {
         );
       });
   }
+  // Function to extract frames and save as Uint8List in RxList
+  void extractFrames(File videoFile) async {
+    final tempDirectory = await getTemporaryDirectory();
 
-  void generateFramesInController(File videoFile) async {
-    try {
-      // Get the temp directory to save frames temporarily
-      final Directory tempDir = await getTemporaryDirectory();
-      final String tempPath = tempDir.path;
+    if (videoController.value.isInitialized) {
+      try {
+        // Extract frames as Images
+        final frames = await VideoFrameExtractor.fromFile(
+          frameFormat: FrameFormat.PNG,
+          imagesCount: videoController.value.duration.inSeconds,
+          video: videoFile,
+          destinationDirectoryPath: tempDirectory.path, // Save frames in temp directory
+        );
 
-      // Command to extract frames, save them as .png in temp directory
-      final String command = '-i "${videoFile.path}" -vf fps=1 -pix_fmt rgb24 "$tempPath/output%d.png"';
+        // Clear previous frames
+        videoFrames.clear();
 
-      // Execute FFmpeg command
-      final result = await FFmpegKit.execute(command);
-      debugPrint("Snigdho: ${await result.getOutput()}");
+        // Iterate over frames, convert them to Uint8List and populate videoFrames
+        for (var frame in frames) {
+          final frameFilePath = '${tempDirectory.path}/${frame.split('/').last}'; // Frame file path
+          final frameFile = File(frameFilePath);
+          final bytes = await frameFile.readAsBytes(); // Convert to Uint8List
 
-      // Check if FFmpeg command was successful
-      if (await result.getReturnCode() == 0) {
-        debugPrint("Frames extracted successfully.");
-
-        // Loop through generated frames and add them to RxList as Uint8List
-        int frameIndex = 2;
-        while (true) {
-          final framePath = '$tempPath/output$frameIndex.png';
-          final frameFile = File(framePath);
-
-          // Break loop if frame does not exist (no more frames to process)
-          if (!frameFile.existsSync()) break;
-
-          // Read frame as bytes and add it to the RxList
-          final frameBytes = await frameFile.readAsBytes();
-          videoFrames.add(frameBytes);
-
-          frameIndex++;
+          videoFrames.add(bytes); // Add to RxList
         }
-      } else {
-        debugPrint("Error in FFmpeg command execution: ${await result.getOutput()}");
+      } catch (e) {
+        debugPrint('Error extracting frames: $e');
       }
-    } catch (e) {
-      debugPrint("Error: $e");
+    } else {
+      debugPrint('ERROR: Video player is not initialized');
     }
   }
 
+  // //working code repaint boundary
+  void generateFramesInIsolate() async {
+    if (videoController.value.isInitialized) {
+      int numberOfFrames = videoController.value.duration.inSeconds;
+      double videoDuration =
+          videoController.value.duration.inSeconds.toDouble();
 
+      FrameGeneratorIsolate frameGenerator = FrameGeneratorIsolate(
+        videoKey: videoKey,
+        videoController: videoController,
+      );
 
+      videoFrames.assignAll(
+          await frameGenerator.generateFrames(numberOfFrames, videoDuration));
+    } else {
+      debugPrint('ERROR: Video player is not initialized');
+    }
+  }
 
-
-
-
-  // //working code reoauntboundary
-  // void generateFramesInIsolate() async {
-  //   if (videoController.value.isInitialized) {
-  //     int numberOfFrames = videoController.value.duration.inSeconds;
-  //     double videoDuration =
-  //         videoController.value.duration.inSeconds.toDouble();
-  //
-  //     FrameGeneratorIsolate frameGenerator = FrameGeneratorIsolate(
-  //       videoKey: videoKey,
-  //       videoController: videoController,
-  //     );
-  //
-  //     videoFrames.assignAll(
-  //         await frameGenerator.generateFrames(numberOfFrames, videoDuration));
-  //   } else {
-  //     debugPrint('ERROR: Video player is not initialized');
-  //   }
-  // }//working code reoauntboundary
-
-  // void generateFramesInIsolate() async {
-  //   if (videoPath.isNotEmpty) {
-  //     int numberOfFrames = videoController.value.duration.inSeconds; // Adjust the number of frames as needed
-  //
-  //     // Create an instance of FrameGenerator
-  //     FrameGeneratorIsolate frameGenerator = FrameGeneratorIsolate(videoPath: videoPath);
-  //
-  //     try {
-  //       // Generate frames using the FrameGenerator
-  //       videoFrames.assignAll(await frameGenerator.generateFrames(numberOfFrames));
-  //
-  //       // Optionally, you can set the video duration here if needed
-  //       // videoDuration.value = videoController.value.duration.inSeconds.toDouble();
-  //
-  //     } catch (e) {
-  //       debugPrint('ERROR: Frame generation failed: $e');
-  //     }
-  //   } else {
-  //     debugPrint('ERROR: Video path is not set or video is not initialized');
-  //   }
-  // }
+  // working code repaint boundary
 
   void playVideo() {
     if (!videoController.value.isPlaying) {
@@ -248,61 +175,12 @@ class UploadAudioVideoController extends GetxController {
   void pauseVideo() {
     if (videoController.value.isPlaying) {
       videoController.pause();
+
     }
   }
 
-  GlobalKey videoKey = GlobalKey();
-
-  // void generateFrames() async {
-  //   // Ensure the video player is initialized and ready to play
-  //   if (videoController.value.isInitialized) {
-  //     // Clear existing frames
-  //     thumbnails.clear();
+  ///-------------------- method start for trimming---------------------------///
   //
-  //     // Calculate the number of frames and each part duration
-  //     int numberOfFrames =
-  //         videoController.value.duration.inSeconds; // Adjust as needed
-  //     double eachPart = videoDuration.value / numberOfFrames;
-  //
-  //     for (int i = 0; i < numberOfFrames; i++) {
-  //       // Seek to the specific frame time
-  //       await videoController
-  //           .seekTo(Duration(milliseconds: (eachPart * i * 1000).toInt()));
-  //
-  //       // Wait for the video to update the frame
-  //       // await videoController.pause();
-  //       // await Future.delayed(const Duration(milliseconds: 100)); // Slight delay to ensure frame is updated
-  //       videoController.play();
-  //       // Capture the current frame from the video player
-  //       RenderObject? renderObject =
-  //           videoKey.currentContext?.findRenderObject();
-  //       if (renderObject is RenderRepaintBoundary) {
-  //         RenderRepaintBoundary boundary = renderObject;
-  //         ui.Image image = await boundary.toImage(
-  //             pixelRatio: 2.0); // Adjust pixel ratio if needed
-  //         ByteData? byteData =
-  //             await image.toByteData(format: ui.ImageByteFormat.png);
-  //         Uint8List? bytes = byteData?.buffer.asUint8List();
-  //
-  //         if (bytes != null) {
-  //           thumbnails.add(bytes); // Add frame to the list
-  //         } else {
-  //           debugPrint(
-  //               'ERROR: Could not capture frame for time ${(eachPart * i).toInt()}');
-  //         }
-  //       } else {
-  //         debugPrint('ERROR: RenderObject is not a RenderRepaintBoundary');
-  //       }
-  //     }
-  //     // // Resume the video if needed after frame capture
-  //     // videoController.play();
-  //   } else {
-  //     debugPrint('ERROR: Video player is not initialized');
-  //   }
-  // }
-
-  ///-------------------- method end for trimming---------------------------///
-  ///
   Future<void> trimVideo() async {
     final directory = await getTemporaryDirectory();
     String outputPath = '${directory.path}/${getRandomString(15)}_trimmed.mp4';

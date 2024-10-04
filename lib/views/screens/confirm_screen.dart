@@ -41,18 +41,6 @@ class ConfirmScreen extends StatelessWidget {
         uploadAudioVideoController.dispose();
         return true; // Allow navigation
       },
-      // PopScope(
-      // canPop: true,
-      // onPopInvokedWithResult: (bool didPop, FormData? result) {
-      //   if (!didPop) {
-      //     uploadAudioVideoController.videoController.pause();
-      //     uploadAudioVideoController.player.pause();
-      //     Navigator.pop(context, result);
-      //     Future.microtask(() async {
-      //       await Get.delete<UploadAudioVideoController>();
-      //     });
-      //   }
-      // },
       child: Scaffold(
         body: Stack(
           children: [
@@ -84,13 +72,9 @@ class ConfirmScreen extends StatelessWidget {
                                     borderRadius: const BorderRadius.all(
                                       Radius.circular(20),
                                     ),
-                                    child: RepaintBoundary(
-                                      key: uploadAudioVideoController
-                                          .videoKey, // RepaintBoundary to capture frames
-                                      child: VideoPlayer(
-                                          uploadAudioVideoController
-                                              .videoController),
-                                    ),
+                                    child: VideoPlayer(
+                                        uploadAudioVideoController
+                                            .videoController),
                                   ),
                                 ),
                               ),
@@ -101,12 +85,15 @@ class ConfirmScreen extends StatelessWidget {
                               child: IconButton(
                                 icon: const Icon(Icons.movie_edit,
                                     color: Colors.white),
-                                onPressed: () => Get.dialog(
-                                  EditVideoWidget(
-                                    uploadAudioVideoController:
-                                        uploadAudioVideoController,
-                                  ),
-                                ),
+                                onPressed: () {
+                                  uploadAudioVideoController.videoController.pause();
+                                  Get.dialog(
+                                    EditVideoWidget(
+                                      uploadAudioVideoController:
+                                      uploadAudioVideoController,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ]),

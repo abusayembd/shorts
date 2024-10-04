@@ -117,10 +117,9 @@ Widget buildRecommendedSoundsList() {
                     favSound = true;
                     //add to favourite sound
                   },
-                  child: Container(
+                  child: SizedBox(
                     height: MediaQuery.of(context).size.height * 0.058,
                     width: MediaQuery.of(context).size.width * 0.09,
-                    // color: Colors.blue,
                     child: Icon(
                       !favSound ? Icons.bookmark_border : Icons.bookmark,
                       color: Colors.white,
