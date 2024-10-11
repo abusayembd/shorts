@@ -98,7 +98,6 @@ class UploadAudioVideoController extends GetxController {
         videoDuration.value =
             videoController.value.duration.inSeconds.toDouble();
         trimmedDuration.value = videoDuration.value;
-        // generateFramesInIsolate();
         videoController.pause();
         extractFrames(videoFile);
         videoController.play();
@@ -145,26 +144,7 @@ class UploadAudioVideoController extends GetxController {
     }
   }
 
-  // //working code repaint boundary
-  void generateFramesInIsolate() async {
-    if (videoController.value.isInitialized) {
-      int numberOfFrames = videoController.value.duration.inSeconds;
-      double videoDuration =
-          videoController.value.duration.inSeconds.toDouble();
 
-      FrameGeneratorIsolate frameGenerator = FrameGeneratorIsolate(
-        videoKey: videoKey,
-        videoController: videoController,
-      );
-
-      videoFrames.assignAll(
-          await frameGenerator.generateFrames(numberOfFrames, videoDuration));
-    } else {
-      debugPrint('ERROR: Video player is not initialized');
-    }
-  }
-
-  // working code repaint boundary
 
   void playVideo() {
     if (!videoController.value.isPlaying) {
