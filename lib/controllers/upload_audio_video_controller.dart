@@ -180,7 +180,6 @@ class UploadAudioVideoController extends GetxController {
       debugPrint('FFmpeg failed with return code: $logs');
     }
   }
-
   ///-------------------- method end for trimming---------------------------///
 
   ///******** Method for opening bottom sheet of audio selection  *********///
